@@ -108,6 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const jsonFileInput = document.getElementById('jsonFileInput');
   const btnResetAll = document.getElementById('btnResetAll');
   const pastInspectionsList = document.getElementById('pastInspectionsList');
+  const btnShareReport = document.getElementById('btnShareReport');
   const btnMarkSectionNo = document.getElementById('btnMarkSectionNo');
   const autosaveTimestamp = document.getElementById('autosaveTimestamp');
   const orderSelectionBar = document.getElementById('orderSelectionBar');
@@ -1678,6 +1679,25 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 500);
     }, 350);
   }
+
+  // --- COMPARTIR INFORME (WEB SHARE API) ---
+  btnShareReport.addEventListener('click', () => {
+    const stats = getInventoryStats();
+    const matricula = currentState.metadata.matricula || 'Sin matrícula';
+    const fecha = currentState.metadata.fecha || 'Sin fecha';
+    const pct = stats.total > 0 ? ((stats.total - stats.pending) / stats.total * 100).toFixed(0) : 0;
+    const shareText = `Checklist SVB - ${matricula} (${fecha})\nProgreso: ${pct}%\nSÍ: ${stats.complies} | NO: ${stats.nonComplies} | Pendientes: ${stats.pending}`;
+    const url = window.location.href;
+
+    if (navigator.share) {
+      navigator.share({ title: `Checklist SVB - ${matricula}`, text: shareText, url }).catch(() => {});
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(shareText + '\n' + url);
+      showAlertCallback('Compartir', 'Resumen copiado al portapapeles');
+    } else {
+      showAlertCallback('Compartir', 'Usa la opción "Compartir" de tu navegador');
+    }
+  });
 
   // --- LISTA DE MATERIAL A PEDIR (SOLO ÍTEMS NO CUMPLE O CADUCADOS) ---
   btnExportPedido.addEventListener('click', () => {
