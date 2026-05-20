@@ -1404,7 +1404,7 @@ body {
     font-size: 0.78rem;
   }
   
-  .col-qty-req, .col-qty-real { display: none; } /* Ocultar columnas de cantidad secundaria en móvil para legibilidad */
+  .col-qty-real { display: none; } /* Ocultar solo cantidad real en móvil */
   
   .compliance-selector {
     padding: 1px;
