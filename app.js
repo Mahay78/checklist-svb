@@ -117,6 +117,73 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnExportPedidoFromBar = document.getElementById('btnExportPedidoFromBar');
   const checkAllOrder = document.getElementById('checkAllOrder');
   const colCheckHeader = document.getElementById('colCheckHeader');
+  const sidebarSearchClear = document.getElementById('sidebarSearchClear');
+  const loadingOverlay = document.getElementById('loadingOverlay');
+  const loadingText = document.getElementById('loadingText');
+
+  // --- DIÁLOGO CONFIRMAR REUTILIZABLE ---
+  function showConfirm(title, message) {
+    return new Promise((resolve) => {
+      const dialog = document.getElementById('customDialog');
+      const dialogCard = document.getElementById('customDialogCard');
+      const titleEl = document.getElementById('customDialogTitle');
+      const msgEl = document.getElementById('customDialogMessage');
+      const footer = document.getElementById('customDialogFooter');
+      titleEl.textContent = title;
+      msgEl.textContent = message;
+      footer.innerHTML = `
+        <button type="button" class="action-btn secondary-btn" id="dialogCancelBtn">Cancelar</button>
+        <button type="button" class="action-btn primary-btn" id="dialogOkBtn">Aceptar</button>
+      `;
+      dialog.classList.add('open');
+      document.getElementById('dialogOkBtn').addEventListener('click', () => { dialog.classList.remove('open'); resolve(true); });
+      document.getElementById('dialogCancelBtn').addEventListener('click', () => { dialog.classList.remove('open'); resolve(false); });
+      dialogCard.addEventListener('click', (e) => e.stopPropagation());
+      dialog.addEventListener('click', () => { dialog.classList.remove('open'); resolve(false); });
+    });
+  }
+
+  // --- INDICADOR DE CARGA ---
+  function showLoading(msg) {
+    loadingText.textContent = msg || 'Generando documento...';
+    loadingOverlay.classList.add('open');
+  }
+  function hideLoading() { loadingOverlay.classList.remove('open'); }
+
+  // --- DIÁLOGO CONFIRMAR CALLBACK-BASED ---
+  function showConfirmCallback(title, message, onConfirm, onCancel) {
+    const dialog = document.getElementById('customDialog');
+    const titleEl = document.getElementById('customDialogTitle');
+    const msgEl = document.getElementById('customDialogMessage');
+    const footer = document.getElementById('customDialogFooter');
+    titleEl.textContent = title;
+    msgEl.innerHTML = message;
+    footer.innerHTML = `
+      <button type="button" class="action-btn secondary-btn" id="dialogCancelBtn">Cancelar</button>
+      <button type="button" class="action-btn primary-btn" id="dialogOkBtn">Aceptar</button>
+    `;
+    dialog.classList.add('open');
+    const close = () => dialog.classList.remove('open');
+    document.getElementById('dialogOkBtn').addEventListener('click', () => { close(); if (onConfirm) onConfirm(); });
+    document.getElementById('dialogCancelBtn').addEventListener('click', () => { close(); if (onCancel) onCancel(); });
+    document.getElementById('customDialogCard').addEventListener('click', (e) => e.stopPropagation());
+    dialog.addEventListener('click', () => { close(); if (onCancel) onCancel(); });
+  }
+
+  function showAlertCallback(title, message, onClose) {
+    const dialog = document.getElementById('customDialog');
+    const titleEl = document.getElementById('customDialogTitle');
+    const msgEl = document.getElementById('customDialogMessage');
+    const footer = document.getElementById('customDialogFooter');
+    titleEl.textContent = title;
+    msgEl.textContent = message;
+    footer.innerHTML = `<button type="button" class="action-btn primary-btn" id="dialogOkBtn">Aceptar</button>`;
+    dialog.classList.add('open');
+    const close = () => { dialog.classList.remove('open'); if (onClose) onClose(); };
+    document.getElementById('dialogOkBtn').addEventListener('click', close);
+    document.getElementById('customDialogCard').addEventListener('click', (e) => e.stopPropagation());
+    dialog.addEventListener('click', close);
+  }
 
   // --- CONTROL DEL MENÚ MÓVIL LATERAL ---
   menuToggleBtn.addEventListener('click', () => appSidebar.classList.add('open'));
@@ -328,6 +395,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // --- ADVERTENCIA VISUAL DE CANTIDAD INSUFICIENTE ---
+  function updateQtyWarning(inputEl, requiredQty) {
+    if (!inputEl.value || isNaN(inputEl.value) || isNaN(requiredQty)) {
+      inputEl.style.borderColor = '';
+      inputEl.style.backgroundColor = '';
+      return;
+    }
+    if (Number(inputEl.value) < Number(requiredQty)) {
+      inputEl.style.borderColor = 'var(--warning)';
+      inputEl.style.backgroundColor = 'var(--warning-glow)';
+    } else {
+      inputEl.style.borderColor = 'var(--success)';
+      inputEl.style.backgroundColor = 'var(--success-glow)';
+    }
+  }
+
   // --- RENDERIZADO DEL MENÚ LATERAL DE CATEGORÍAS ---
   function renderSidebarNav() {
     sidebarNav.innerHTML = '';
@@ -382,7 +465,17 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Escuchar entrada en buscador de categorías lateral
-  sidebarSearch.addEventListener('input', renderSidebarNav);
+  sidebarSearch.addEventListener('input', () => {
+    sidebarSearchClear.style.display = sidebarSearch.value ? 'block' : 'none';
+    renderSidebarNav();
+  });
+
+  sidebarSearchClear.addEventListener('click', () => {
+    sidebarSearch.value = '';
+    sidebarSearchClear.style.display = 'none';
+    renderSidebarNav();
+    sidebarSearch.focus();
+  });
 
   // --- AUXILIAR: DETERMINAR CLASE DE FECHA DE CADUCIDAD ---
   function getExpiryClass(dateStr) {
@@ -673,7 +766,11 @@ document.addEventListener('DOMContentLoaded', () => {
       // Cambio en cantidad real
       qtyInput.addEventListener('input', () => {
         updateItemState({ real_qty: qtyInput.value });
+        updateQtyWarning(qtyInput, item.required_qty);
       });
+
+      // Estado inicial de advertencia
+      updateQtyWarning(qtyInput, item.required_qty);
 
       // Botón rápido de copiar cantidad
       copyBtn.addEventListener('click', () => {
@@ -925,6 +1022,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.head.appendChild(printStyle);
 
     setTimeout(() => {
+      hideLoading();
       window.print();
       setTimeout(() => { reportContainer.remove(); printStyle.remove(); }, 500);
     }, 250);
@@ -932,29 +1030,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- MARCAR TODA LA SECCIÓN COMO NO ---
   btnMarkSectionNo.addEventListener('click', () => {
-    if (!confirm('¿Marcar TODOS los ítems de esta sección como NO CUMPLE?')) return;
-
-    const section = CHECKLIST_DATA.sections[currentState.activeSectionIndex];
-    section.items.forEach(item => {
-      if (!currentState.answers[item.id]) {
-        currentState.answers[item.id] = { status: '', real_qty: '', expiry: '', obs: '' };
-      }
-      currentState.answers[item.id].status = 'NO';
-      // Actualizar fila directamente sin reconstruir toda la tabla
-      const row = document.getElementById(`row_${item.id}`);
-      if (row) {
-        row.className = 'table-row row-nok';
-        const btnSi = row.querySelector('.comp-btn-si');
-        const btnNo = row.querySelector('.comp-btn-no');
-        if (btnSi) btnSi.classList.remove('active');
-        if (btnNo) btnNo.classList.add('active');
-      }
+    showConfirmCallback('Marcar Sección', '¿Marcar TODOS los ítems de esta sección como NO CUMPLE?', () => {
+      const section = CHECKLIST_DATA.sections[currentState.activeSectionIndex];
+      section.items.forEach(item => {
+        if (!currentState.answers[item.id]) {
+          currentState.answers[item.id] = { status: '', real_qty: '', expiry: '', obs: '' };
+        }
+        currentState.answers[item.id].status = 'NO';
+        const row = document.getElementById(`row_${item.id}`);
+        if (row) {
+          row.className = 'table-row row-nok';
+          const btnSi = row.querySelector('.comp-btn-si');
+          const btnNo = row.querySelector('.comp-btn-no');
+          if (btnSi) btnSi.classList.remove('active');
+          if (btnNo) btnNo.classList.add('active');
+        }
+      });
+      hasUnsavedChanges = true;
+      saveStateToLocalStorage();
+      updateDashboardStats();
+      renderSidebarNav();
     });
-
-    hasUnsavedChanges = true;
-    saveStateToLocalStorage();
-    updateDashboardStats();
-    renderSidebarNav();
   });
 
   // --- ATAJOS DE TECLADO: FLECHAS ← → PARA NAVEGAR SECCIONES ---
@@ -1058,11 +1154,11 @@ document.addEventListener('DOMContentLoaded', () => {
       btnDelete.style.fontSize = '0.8rem';
       btnDelete.textContent = 'Eliminar';
       btnDelete.addEventListener('click', () => {
-        if (confirm(`¿Estás seguro de que deseas eliminar la inspección de la matrícula "${ins.matricula}" del historial local?`)) {
+        showConfirmCallback('Eliminar inspección', `¿Estás seguro de que deseas eliminar la inspección de la matrícula "${ins.matricula}" del historial local?`, () => {
           currentState.pastInspections = currentState.pastInspections.filter(item => item.id !== ins.id);
           localStorage.setItem('svb_past_inspections', JSON.stringify(currentState.pastInspections));
           renderPastInspectionsList();
-        }
+        });
       });
 
       actions.appendChild(btnPrint);
@@ -1153,10 +1249,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- EXPORTAR HOJA EXCEL EN FORMATO CSV CON BOM ---
   btnExportExcel.addEventListener('click', () => {
     const stats = getInventoryStats();
-    if (stats.pending > 0 && !confirm(`Atención: ${stats.pending} artículos pendientes. ¿Exportar CSV de todas formas?`)) return;
-
-    // 1. Cabecera del archivo CSV
-    let csvContent = '\uFEFF'; // BOM UTF-8 para que Excel lo abra con las eñes y tildes perfectas
+    const doExport = () => {
+      let csvContent = '\uFEFF'; // BOM UTF-8 para que Excel lo abra con las eñes y tildes perfectas
     csvContent += 'Sección;Fila Excel;Elemento de Inspección;Cantidad Requerida;¿Cumple (SI/NO)?;Cantidad Real;Caducidad;Observaciones e Incidencias\n';
 
     // 2. Insertar filas de datos
@@ -1191,6 +1285,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    };
+    if (stats.pending > 0) {
+      showConfirmCallback('Exportar CSV', `Atención: ${stats.pending} artículos pendientes. ¿Exportar CSV de todas formas?`, doExport);
+    } else {
+      doExport();
+    }
   });
 
   // --- GUARDAR BACKUP COMPLETO EN JSON ---
@@ -1221,29 +1321,26 @@ document.addEventListener('DOMContentLoaded', () => {
     reader.onload = (event) => {
       try {
         const parsed = JSON.parse(event.target.result);
-        // Validación mínima
         if (parsed && typeof parsed === 'object' && parsed.answers && parsed.metadata) {
-          if (confirm('Se ha detectado una copia de seguridad válida. ¿Deseas restaurarla y sobrescribir las respuestas actuales en este dispositivo?')) {
+          const doRestore = () => {
             currentState = {
               metadata: parsed.metadata,
               answers: parsed.answers,
               activeSectionIndex: parsed.activeSectionIndex || 0,
               pastInspections: parsed.pastInspections || currentState.pastInspections
             };
-            // Persistir
             saveStateToLocalStorage();
             if (currentState.pastInspections.length > 0) {
               localStorage.setItem('svb_past_inspections', JSON.stringify(currentState.pastInspections));
             }
-            // Recargar interfaz
-            alert('¡Inspección restaurada con éxito!');
-            location.reload();
-          }
+            showAlertCallback('Restaurado', 'Inspección restaurada con éxito', () => location.reload());
+          };
+          showConfirmCallback('Restaurar backup', 'Se ha detectado una copia de seguridad válida. ¿Deseas restaurarla y sobrescribir las respuestas actuales en este dispositivo?', doRestore);
         } else {
-          alert('El archivo JSON seleccionado no tiene un formato compatible con este checklist.');
+          showAlertCallback('Error', 'El archivo JSON seleccionado no tiene un formato compatible con este checklist.');
         }
       } catch (err) {
-        alert('Error al leer el archivo JSON. Asegúrate de que el archivo esté en buen estado.');
+        showAlertCallback('Error', 'Error al leer el archivo JSON. Asegúrate de que el archivo esté en buen estado.');
       }
     };
     reader.readAsText(file);
@@ -1257,11 +1354,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const stats = getInventoryStats();
     let confirmMsg = '¿Deseas archivar este acta en el historial del dispositivo antes de imprimir?';
     if (stats.pending > 0) {
-      confirmMsg += `\n\nATENCIÓN: Tienes ${stats.pending} artículos pendientes de revisión.`;
+      confirmMsg += `<br><br><strong>Atención:</strong> ${stats.pending} artículos pendientes de revisión.`;
     }
 
-    if (confirm(confirmMsg)) {
-      // Archivar en el historial
+    showConfirmCallback('Archivar acta', confirmMsg, () => {
       const archiveItem = {
         id: 'inspeccion_' + Date.now(),
         timestamp: Date.now(),
@@ -1285,12 +1381,12 @@ document.addEventListener('DOMContentLoaded', () => {
       renderPastInspectionsList();
       // Lanzar impresión de esta inspección que acabamos de archivar
       triggerArchivedPrintReport(archiveItem);
-    }
+    });
   });
 
   // Inyectar un reporte de impresión completo y estructurado en papel
   function triggerArchivedPrintReport(insData) {
-    // 1. Eliminar cualquier contenedor de impresión previo
+    showLoading('Generando acta PDF...');
     const existing = document.getElementById('printReportContainer');
     if (existing) existing.remove();
 
@@ -1573,6 +1669,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 9. Ejecutar la llamada nativa de impresión con retraso para que cargue la firma
     setTimeout(() => {
+      hideLoading();
       window.print();
       // 10. Limpiar después de imprimir para no corromper la pantalla
       setTimeout(() => {
@@ -1725,6 +1822,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.head.appendChild(printStyle);
 
     setTimeout(() => {
+      hideLoading();
       window.print();
       setTimeout(() => { reportContainer.remove(); printStyle.remove(); }, 500);
     }, 250);
@@ -1732,27 +1830,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- REINICIAR FORMULARIO (LIMPIAR TODO CON CONFIRMACIÓN) ---
   btnResetAll.addEventListener('click', () => {
-    if (confirm('ATENCIÓN: ¿Estás completamente seguro de que deseas reiniciar todo el checklist? Perderás todas las respuestas guardadas del acta actual.\n\n(Las inspecciones guardadas en el historial del dispositivo no se verán afectadas)')) {
-      currentState.answers = {};
-      // Reiniciar metadatos excepto fijos si es útil, pero para reiniciar completamente vaciamos todo excepto la matrícula
-      const mat = currentState.metadata.matricula;
-      currentState.metadata = {
-        dotacion: '',
-        matricula: mat, // Conservamos la matrícula como ayuda al operador
-        fecha: new Date().toISOString().split('T')[0],
-        unidad: '',
-        bastidor: '',
-        marca: '',
-        fecha_matriculacion: '',
-        modelo: ''
-      };
-      currentState.activeSectionIndex = 0;
-      saveStateToLocalStorage();
-
-      // Recargar interfaz
-      alert('Checklist reiniciado con éxito.');
-      location.reload();
-    }
+    showConfirmCallback('Reiniciar checklist',
+      '¿Estás completamente seguro de que deseas reiniciar todo el checklist?<br>Perderás todas las respuestas guardadas del acta actual.<br><br>(Las inspecciones guardadas en el historial del dispositivo no se verán afectadas)',
+      () => {
+        currentState.answers = {};
+        const mat = currentState.metadata.matricula;
+        currentState.metadata = {
+          dotacion: '',
+          matricula: mat,
+          fecha: new Date().toISOString().split('T')[0],
+          unidad: '',
+          bastidor: '',
+          marca: '',
+          fecha_matriculacion: '',
+          modelo: ''
+        };
+        currentState.activeSectionIndex = 0;
+        saveStateToLocalStorage();
+        showAlertCallback('Reiniciado', 'Checklist reiniciado con éxito.', () => location.reload());
+      });
   });
 
   // --- ARRANQUE E INICIALIZACIÓN DE LA APLICACIÓN ---

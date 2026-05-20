@@ -767,12 +767,14 @@ body {
 .checklist-table-wrapper {
   overflow-x: auto;
   min-height: 250px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .checklist-table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
+  min-width: 700px; /* Forzar scroll horizontal en móvil */
 }
 
 .checklist-table th {
