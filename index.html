@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Checklist Ambulancia SVB - Tipo B</title>
+  
+  <!-- SEO Tags -->
+  <meta name="description" content="Formulario digital interactivo y offline para la inspección y checklist mensual de ambulancias de Soporte Vital Básico Clase B.">
+  
+  <!-- PWA Support -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0d9488">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Checklist SVB">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  
+  <!-- Google Fonts - Fallback to sans-serif if offline -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="app-sidebar" id="appSidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <svg viewBox="0 0 24 24" class="logo-icon" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75" />
+          </svg>
+          <div class="logo-text">
+            <h2>SVB Control</h2>
+            <span>Ambulancia Clase B</span>
+          </div>
+        </div>
+        <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Cerrar menú">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Progress Ring Overview -->
+      <div class="sidebar-progress-card">
+        <div class="progress-details">
+          <span class="progress-pct" id="sidebarProgressPct">0%</span>
+          <span class="progress-label">Progreso de Inspección</span>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="sidebarProgressBarFill" style="width: 0%"></div>
+        </div>
+      </div>
+      
+      <div class="sidebar-search-box">
+        <input type="text" id="sidebarSearch" placeholder="Buscar categoría..." aria-label="Buscar categoría">
+      </div>
+      
+      <!-- Category/Section List -->
+      <nav class="sidebar-nav" id="sidebarNav" aria-label="Categorías de la ambulancia">
+        <!-- Rendered dynamically in app.js -->
+      </nav>
+    </aside>
+    
+    <!-- Main Content Area -->
+    <main class="app-main">
+      
+      <!-- Mobile Toolbar Header -->
+      <header class="mobile-header">
+        <button class="menu-toggle-btn" id="menuToggleBtn" aria-label="Abrir menú">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <h1 class="mobile-title">Checklist SVB</h1>
+        <button class="theme-toggle-btn" id="themeToggleBtnMobile" aria-label="Cambiar tema">
+          <svg viewBox="0 0 24 24" class="sun-icon" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+          </svg>
+        </button>
+      </header>
+      
+      <!-- Desktop Header & Stats Toolbar -->
+      <header class="app-header">
+        <div class="header-title-area">
+          <h1 id="mainTitle">Formulario de Inspección Vehicular</h1>
+          <p class="header-subtitle">Completa el checklist mensual detallado de la unidad SVB</p>
+        </div>
+        
+        <div class="header-actions">
+          <!-- Theme Toggle -->
+          <button class="theme-toggle-btn glass-btn" id="themeToggleBtn" title="Cambiar Tema" aria-label="Cambiar tema">
+            <svg viewBox="0 0 24 24" class="sun-icon" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+            </svg>
+            <svg viewBox="0 0 24 24" class="moon-icon" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25c0 5.385 4.365 9.75 9.75 9.75 9.03 0 11.752-6.248 11.752-6.248z" />
+            </svg>
+          </button>
+          
+          <!-- Offline Status Badge -->
+          <div class="offline-badge" id="offlineBadge">
+            <span class="badge-dot"></span>
+            <span class="badge-text">Conectado</span>
+          </div>
+          
+          <!-- Inspection Management Actions -->
+          <button class="action-btn primary-btn" id="btnStats" title="Ver Estadísticas Completa">
+            <svg viewBox="0 0 24 24" class="btn-icon" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z" />
+            </svg>
+            <span>Estadísticas</span>
+          </button>
+        </div>
+      </header>
+      
+      <!-- Metadata Form Container (Glassmorphic) -->
+      <section class="section-card glass-panel" id="metadataSection">
+        <div class="section-header-compact">
+          <div class="section-title-icon">
+            <svg viewBox="0 0 24 24" class="title-svg" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125a1.125 1.125 0 001.125-1.125V9.75M3.75 12h16.5M12 3v9M7.5 7.5h9" />
+            </svg>
+            <h3>Datos de Control del Vehículo</h3>
+          </div>
+          <button class="toggle-card-btn" id="toggleMetadataBtn" aria-expanded="true" aria-label="Contraer sección">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="arrow-svg">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+            </svg>
+          </button>
+        </div>
+        
+        <div class="metadata-grid" id="metadataGrid">
+          <div class="input-group">
+            <label for="metaDotacion">Dotación</label>
+            <input type="text" id="metaDotacion" placeholder="Nombres del personal técnico" class="glass-input">
+          </div>
+          <div class="input-group">
+            <label for="metaMatricula">Matrícula</label>
+            <input type="text" id="metaMatricula" placeholder="Ej. 1234-XYZ" class="glass-input">
+          </div>
+          <div class="input-group">
+            <label for="metaFecha">Fecha de Inspección</label>
+            <input type="date" id="metaFecha" class="glass-input">
+          </div>
+          <div class="input-group">
+            <label for="metaUnidad">Unidad</label>
+            <input type="text" id="metaUnidad" placeholder="Ej. Base Central 1" class="glass-input">
+          </div>
+          <div class="input-group">
+            <label for="metaBastidor">Número de Bastidor</label>
+            <input type="text" id="metaBastidor" placeholder="Código de chasis" class="glass-input">
+          </div>
+          <div class="input-group">
+            <label for="metaMarca">Marca</label>
+            <input type="text" id="metaMarca" placeholder="Ej. Mercedes, Renault" class="glass-input">
+          </div>
+          <div class="input-group">
+            <label for="metaFechaMatriculacion">Fecha de Matriculación</label>
+            <input type="date" id="metaFechaMatriculacion" class="glass-input">
+          </div>
+          <div class="input-group">
+            <label for="metaModelo">Modelo</label>
+            <input type="text" id="metaModelo" placeholder="Ej. Sprinter, Master" class="glass-input">
+          </div>
+        </div>
+      </section>
+      
+      <!-- Quick Dashboard Summary Banner -->
+      <section class="quick-summary-grid">
+        <div class="summary-card glass-panel count-total">
+          <div class="summary-card-inner">
+            <span class="card-num" id="statTotalItems">462</span>
+            <span class="card-desc">Artículos Totales</span>
+          </div>
+        </div>
+        <div class="summary-card glass-panel count-complies">
+          <div class="summary-card-inner">
+            <span class="card-num highlight-success" id="statComplies">0</span>
+            <span class="card-desc">Cumplen (SI)</span>
+          </div>
+        </div>
+        <div class="summary-card glass-panel count-non-complies">
+          <div class="summary-card-inner">
+            <span class="card-num highlight-danger" id="statNonComplies">0</span>
+            <span class="card-desc">No Cumplen (NO)</span>
+          </div>
+        </div>
+        <div class="summary-card glass-panel count-pending">
+          <div class="summary-card-inner">
+            <span class="card-num highlight-warning" id="statPending">462</span>
+            <span class="card-desc">Pendientes</span>
+          </div>
+        </div>
+      </section>
+      
+      <!-- Filter and Actions Toolbar -->
+      <section class="toolbar-card glass-panel">
+        <div class="search-input-wrapper">
+          <svg viewBox="0 0 24 24" class="search-icon-svg" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input type="text" id="globalSearch" placeholder="Buscar material o elemento en el inventario..." aria-label="Buscador global">
+        </div>
+        
+        <div class="filter-group">
+          <button class="filter-btn active" data-filter="all">Todos</button>
+          <button class="filter-btn" data-filter="pending">Pendientes</button>
+          <button class="filter-btn" data-filter="nocumply">No Cumplen</button>
+          <button class="filter-btn" data-filter="expiry">Caducados/Próximos</button>
+          <button class="filter-btn" data-filter="obs">Con Observaciones</button>
+        </div>
+      </section>
+      
+      <!-- Active Section Header & Navigation Banner -->
+      <div class="active-category-banner">
+        <h2 id="activeSectionTitle">CARACTERÍSTICAS GENERALES CLASE DE AMBULANCIA</h2>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button class="action-btn danger-btn" id="btnMarkSectionNo" style="padding:4px 10px;font-size:0.75rem;" title="Marcar todos los ítems de esta sección como NO CUMPLE">Marcar Sección NO</button>
+          <span class="section-badge" id="activeSectionProgress">0/7 ítems</span>
+        </div>
+      </div>
+
+      <!-- Autosave indicator -->
+      <div style="text-align:right;font-size:0.7rem;color:var(--text-muted);margin-bottom:-12px;">
+        <span id="autosaveTimestamp"></span>
+      </div>
+      
+      <!-- Checklist Interactive Table -->
+      <div class="checklist-table-wrapper glass-panel">
+        <table class="checklist-table">
+          <thead>
+            <tr>
+              <th class="col-desc">Descripción del Elemento</th>
+              <th class="col-qty-req">Cant. Req.</th>
+              <th class="col-cumple">¿Cumple?</th>
+              <th class="col-qty-real">Cant. Real</th>
+              <th class="col-caducidad">Caducidad</th>
+              <th class="col-obs">Observaciones / Incidencias</th>
+            </tr>
+          </thead>
+          <tbody id="checklistTableBody">
+            <!-- Checklist items rendered dynamically in app.js -->
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Table Navigation Buttons -->
+      <div class="table-navigation-bar">
+        <button class="nav-btn glass-btn" id="btnPrevSection">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+          </svg>
+          <span>Sección Anterior</span>
+        </button>
+        <button class="nav-btn glass-btn" id="btnNextSection">
+          <span>Siguiente Sección</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Finalization & Signature Section -->
+      <section class="section-card glass-panel" id="signatureSection">
+        <div class="section-header-compact">
+          <div class="section-title-icon">
+            <svg viewBox="0 0 24 24" class="title-svg" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+            </svg>
+            <h3>Finalización y Firma del Operador</h3>
+          </div>
+        </div>
+        
+        <div class="signature-container">
+          <div class="signature-box-wrapper">
+            <label>Firma Digitalizada del Inspector</label>
+            <div class="canvas-wrapper">
+              <canvas id="signatureCanvas" width="500" height="200"></canvas>
+            </div>
+            <div class="canvas-controls">
+              <button class="action-btn secondary-btn" id="btnClearSignature">Limpiar Firma</button>
+            </div>
+          </div>
+          <div class="signature-box-wrapper">
+            <label>Firma Digitalizada del Jefe de Unidad</label>
+            <div class="canvas-wrapper">
+              <canvas id="signatureCanvasJefe" width="500" height="200"></canvas>
+            </div>
+            <div class="canvas-controls">
+              <button class="action-btn secondary-btn" id="btnClearSignatureJefe">Limpiar Firma</button>
+            </div>
+          </div>
+        </div>
+          
+          <div class="report-finalize-actions">
+            <h4>Acciones del Documento</h4>
+            <p>Una vez completada la inspección, puedes descargar el informe o exportar los datos para copias de seguridad.</p>
+            <div class="action-buttons-stack">
+              <button class="action-btn primary-btn flex-btn" id="btnExportPDF">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0a2.25 2.25 0 01-2.24 2.24H8.58A2.25 2.25 0 016.34 18m11.318-3.09c.48-.061.95-.126 1.41-.196m-1.41.196l.666 5.33a2.25 2.25 0 002.227 1.97h.046a2.25 2.25 0 002.227-1.97l.666-5.33a2.247 2.247 0 00-1.41-.197m-1.41.197h1.41" />
+                </svg>
+                <span>Descargar Acta PDF</span>
+              </button>
+              
+              <button class="action-btn secondary-btn flex-btn" id="btnExportPedido" style="background-color: var(--warning-glow); border-color: rgba(245, 158, 11, 0.3); color: var(--warning);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+                <span>Material a Pedir (PDF)</span>
+              </button>
+              
+              <button class="action-btn secondary-btn flex-btn" id="btnExportExcel">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+                <span>Exportar Hoja Excel (CSV)</span>
+              </button>
+              
+              <div class="backup-actions">
+                <button class="action-btn text-btn flex-btn" id="btnSaveJSON">
+                  <span>Guardar Backup JSON</span>
+                </button>
+                <button class="action-btn text-btn flex-btn" id="btnLoadJSONTrigger">
+                  <span>Restaurar Backup JSON</span>
+                </button>
+                <input type="file" id="jsonFileInput" accept=".json" style="display: none;">
+              </div>
+              
+              <button class="action-btn danger-btn flex-btn" id="btnResetAll">
+                <span>Reiniciar Checklist</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <!-- Past Inspections Log -->
+      <section class="section-card glass-panel" id="pastInspectionsSection">
+        <div class="section-header-compact">
+          <div class="section-title-icon">
+            <svg viewBox="0 0 24 24" class="title-svg" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+            </svg>
+            <h3>Historial de Inspecciones en este Dispositivo</h3>
+          </div>
+        </div>
+        <div class="past-inspections-list" id="pastInspectionsList">
+          <p class="empty-list-text">No hay inspecciones previas guardadas en este navegador.</p>
+        </div>
+      </section>
+      
+    </main>
+  </div>
+  
+  <!-- Full Screen Statistics & Issues Report Modal -->
+  <div class="modal-overlay" id="statsModal">
+    <div class="modal-card glass-panel">
+      <div class="modal-header">
+        <h3>Informe Estadístico y de Incidencias</h3>
+        <button class="modal-close-btn" id="modalCloseBtn" aria-label="Cerrar modal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="stats-modal-dashboard">
+          <div class="stat-large-ring">
+            <svg viewBox="0 0 36 36" class="circular-chart-svg">
+              <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <path class="circle-fill" id="modalProgressRing" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            </svg>
+            <div class="circle-inner-text">
+              <span id="modalProgressPctText">0%</span>
+              <span>Completado</span>
+            </div>
+          </div>
+          
+          <div class="stats-summary-boxes">
+            <div class="modal-stat-box">
+              <span class="modal-stat-val text-success" id="modalStatOk">0</span>
+              <span class="modal-stat-lbl">Conformes (Cumple SI)</span>
+            </div>
+            <div class="modal-stat-box">
+              <span class="modal-stat-val text-danger" id="modalStatNok">0</span>
+              <span class="modal-stat-lbl">No Conformes (Cumple NO)</span>
+            </div>
+            <div class="modal-stat-box">
+              <span class="modal-stat-val text-warning" id="modalStatPending">0</span>
+              <span class="modal-stat-lbl">Pendientes de Revisión</span>
+            </div>
+            <div class="modal-stat-box">
+              <span class="modal-stat-val text-info" id="modalStatNearExpiry">0</span>
+              <span class="modal-stat-lbl">Caducados o Próximos</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="issues-log-section">
+          <h4>Registro General de Incidencias e Incumplimientos</h4>
+          <p class="issues-desc">Todos los materiales y características marcados como <strong>"NO"</strong> se listan aquí para la corrección del inventario:</p>
+          <div class="issues-list-container" id="modalIssuesList">
+            <p class="no-issues-text">¡Enhorabuena! No hay discrepancias o incidencias reportadas en la unidad.</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="action-btn primary-btn" id="modalOkBtn">Volver al Checklist</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Global Loaded Scripts -->
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
