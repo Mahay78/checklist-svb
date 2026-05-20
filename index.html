@@ -216,6 +216,24 @@
           <button type="button" class="filter-btn" data-filter="nocumply">No Cumplen</button>
           <button type="button" class="filter-btn" data-filter="expiry">Caducados/Próximos</button>
           <button type="button" class="filter-btn" data-filter="obs">Con Observaciones</button>
+          <button type="button" class="filter-btn" data-filter="order">A Pedir</button>
+        </div>
+      </section>
+
+      <!-- Selection bar for order mode (hidden by default) -->
+      <section class="toolbar-card glass-panel" id="orderSelectionBar" style="display:none; padding:12px 20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+          <span id="orderCount" style="font-size:0.85rem;font-weight:600;color:var(--warning);">0 artículos seleccionados</span>
+          <div style="display:flex;gap:8px;">
+            <button type="button" class="action-btn text-btn" id="btnSelectAllOrder" style="padding:4px 12px;font-size:0.8rem;">Seleccionar Todos</button>
+            <button type="button" class="action-btn text-btn" id="btnDeselectAllOrder" style="padding:4px 12px;font-size:0.8rem;">Deseleccionar Todos</button>
+            <button type="button" class="action-btn primary-btn" id="btnExportPedidoFromBar" style="padding:6px 14px;font-size:0.82rem;">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+              </svg>
+              Generar Pedido PDF
+            </button>
+          </div>
         </div>
       </section>
       
@@ -238,6 +256,9 @@
         <table class="checklist-table">
           <thead>
             <tr>
+              <th class="col-check" id="colCheckHeader" style="width:40px;text-align:center;display:none;">
+                <input type="checkbox" id="checkAllOrder" style="width:16px;height:16px;cursor:pointer;" aria-label="Seleccionar todos">
+              </th>
               <th class="col-desc">Descripción del Elemento</th>
               <th class="col-qty-req">Cant. Req.</th>
               <th class="col-cumple">¿Cumple?</th>

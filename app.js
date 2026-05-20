@@ -110,6 +110,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const pastInspectionsList = document.getElementById('pastInspectionsList');
   const btnMarkSectionNo = document.getElementById('btnMarkSectionNo');
   const autosaveTimestamp = document.getElementById('autosaveTimestamp');
+  const orderSelectionBar = document.getElementById('orderSelectionBar');
+  const orderCount = document.getElementById('orderCount');
+  const btnSelectAllOrder = document.getElementById('btnSelectAllOrder');
+  const btnDeselectAllOrder = document.getElementById('btnDeselectAllOrder');
+  const btnExportPedidoFromBar = document.getElementById('btnExportPedidoFromBar');
+  const checkAllOrder = document.getElementById('checkAllOrder');
+  const colCheckHeader = document.getElementById('colCheckHeader');
 
   // --- CONTROL DEL MENÚ MÓVIL LATERAL ---
   menuToggleBtn.addEventListener('click', () => appSidebar.classList.add('open'));
@@ -446,8 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Filtrar los ítems según el filtro rápido activo
     if (activeFilter !== 'all') {
       const today = new Date();
-      const limitDate = new Date();
-      limitDate.setDate(today.getDate() + 30);
+      today.setHours(0, 0, 0, 0);
 
       itemsToRender = itemsToRender.filter(item => {
         const ans = currentState.answers[item.id] || { status: '', real_qty: '', expiry: '', obs: '' };
@@ -459,22 +465,32 @@ document.addEventListener('DOMContentLoaded', () => {
           case 'expiry':
             if (!ans.expiry) return false;
             const expDate = new Date(ans.expiry);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
             expDate.setHours(0, 0, 0, 0);
             return expDate <= today;
           case 'obs':
             return ans.obs && ans.obs.trim() !== '';
+          case 'order':
+            if (ans.status === 'NO') return true;
+            if (ans.expiry) {
+              const expDate = new Date(ans.expiry);
+              expDate.setHours(0, 0, 0, 0);
+              const limitDate = new Date(today);
+              limitDate.setDate(today.getDate() + 30);
+              return expDate <= limitDate;
+            }
+            return false;
           default:
             return true;
         }
+      });
+    }
       });
     }
 
     if (itemsToRender.length === 0) {
       const emptyRow = document.createElement('tr');
       emptyRow.innerHTML = `
-        <td colspan="6" class="empty-list-text" style="text-align: center; padding: 40px 16px;">
+        <td colspan="${activeFilter === 'order' ? 7 : 6}" class="empty-list-text" style="text-align: center; padding: 40px 16px;">
           No hay elementos que coincidan con los criterios o filtros seleccionados.
         </td>
       `;
@@ -488,6 +504,26 @@ document.addEventListener('DOMContentLoaded', () => {
       const row = document.createElement('tr');
       row.className = `table-row ${ans.status === 'SI' ? 'row-ok' : ''} ${ans.status === 'NO' ? 'row-nok' : ''}`;
       row.id = `row_${item.id}`;
+
+      // 0. Columna Checkbox (solo en modo pedido)
+      const isOrderMode = activeFilter === 'order';
+      const cellCheck = document.createElement('td');
+      cellCheck.className = 'col-check';
+      cellCheck.style.cssText = 'text-align:center;';
+      const chkBox = document.createElement('input');
+      chkBox.type = 'checkbox';
+      chkBox.style.cssText = 'width:18px;height:18px;cursor:pointer;';
+      chkBox.checked = currentState.answers[item.id]?.selectedForOrder !== false;
+      chkBox.setAttribute('aria-label', `Seleccionar ${item.description}`);
+      chkBox.addEventListener('change', () => {
+        if (!currentState.answers[item.id]) {
+          currentState.answers[item.id] = { status: '', real_qty: '', expiry: '', obs: '' };
+        }
+        currentState.answers[item.id].selectedForOrder = chkBox.checked;
+        saveStateToLocalStorage();
+        updateOrderCount();
+      });
+      cellCheck.appendChild(chkBox);
 
       // 1. Columna Descripción
       const cellDesc = document.createElement('td');
@@ -577,6 +613,7 @@ document.addEventListener('DOMContentLoaded', () => {
       cellObs.appendChild(obsInput);
 
       // Agregar celdas a la fila
+      row.appendChild(cellCheck);
       row.appendChild(cellDesc);
       row.appendChild(cellReq);
       row.appendChild(cellCumple);
@@ -698,14 +735,179 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- FILTROS RÁPIDOS (DE LA BARRA DE HERRAMIENTAS) ---
   filterButtons.forEach(btn => {
     btn.addEventListener('click', () => {
-      // Cambiar botón activo
       filterButtons.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
       activeFilter = btn.dataset.filter;
+      const isOrder = activeFilter === 'order';
+      orderSelectionBar.style.display = isOrder ? 'flex' : 'none';
+      colCheckHeader.style.display = isOrder ? '' : 'none';
+      checkAllOrder.checked = false;
       renderActiveSection();
+      updateOrderCount();
     });
   });
+
+  // --- FUNCIONES PARA EL MODO "A PEDIR" ---
+  function updateOrderCount() {
+    let total = 0;
+    let selected = 0;
+    CHECKLIST_DATA.sections.forEach(section => {
+      section.items.forEach(item => {
+        const ans = currentState.answers[item.id];
+        if (ans && (ans.status === 'NO' || (ans.expiry && new Date(ans.expiry) <= new Date(Date.now() + 30*24*60*60*1000)))) {
+          total++;
+          if (ans.selectedForOrder !== false) selected++;
+        }
+      });
+    });
+    orderCount.textContent = `${selected} de ${total} artículos seleccionados`;
+  }
+
+  checkAllOrder.addEventListener('change', () => {
+    const checked = checkAllOrder.checked;
+    const rows = checklistTableBody.querySelectorAll('tr');
+    rows.forEach(row => {
+      const chk = row.querySelector('.col-check input[type="checkbox"]');
+      if (chk) {
+        chk.checked = checked;
+        const itemId = row.id.replace('row_', '');
+        if (!currentState.answers[itemId]) {
+          currentState.answers[itemId] = { status: '', real_qty: '', expiry: '', obs: '' };
+        }
+        currentState.answers[itemId].selectedForOrder = checked;
+      }
+    });
+    saveStateToLocalStorage();
+    updateOrderCount();
+  });
+
+  btnSelectAllOrder.addEventListener('click', () => {
+    checkAllOrder.checked = true;
+    checkAllOrder.dispatchEvent(new Event('change'));
+  });
+
+  btnDeselectAllOrder.addEventListener('click', () => {
+    checkAllOrder.checked = false;
+    checkAllOrder.dispatchEvent(new Event('change'));
+  });
+
+  btnExportPedidoFromBar.addEventListener('click', () => {
+    generateOrderPDF();
+  });
+
+  function generateOrderPDF() {
+    const existing = document.getElementById('printReportContainer');
+    if (existing) existing.remove();
+
+    const reportContainer = document.createElement('div');
+    reportContainer.id = 'printReportContainer';
+    reportContainer.style.cssText = 'position:absolute;left:0;top:0;width:100%;z-index:9999999;background:#fff;color:#000;font-family:sans-serif;padding:0;';
+
+    const matricula = currentState.metadata.matricula || 'Sin Matrícula';
+    const fecha = currentState.metadata.fecha || new Date().toLocaleDateString('es-ES');
+    const unidad = currentState.metadata.unidad || 'No especificada';
+    const dotacion = currentState.metadata.dotacion || 'No especificada';
+
+    let itemsToOrder = [];
+    CHECKLIST_DATA.sections.forEach(section => {
+      section.items.forEach(item => {
+        const ans = currentState.answers[item.id];
+        if (!ans) return;
+        const selected = ans.selectedForOrder !== false;
+        if (!selected) return;
+
+        let motivo = '';
+        if (ans.status === 'NO') motivo = ans.obs || 'Sin stock / No disponible';
+        if (ans.expiry) {
+          const expDate = new Date(ans.expiry);
+          expDate.setHours(0, 0, 0, 0);
+          const limitDate = new Date();
+          limitDate.setHours(0, 0, 0, 0);
+          limitDate.setDate(limitDate.getDate() + 30);
+          if (expDate <= limitDate) {
+            const prefix = motivo ? ' | ' : '';
+            motivo += `${prefix}${expDate <= new Date() ? 'CADUCADO' : 'Próximo a caducar'}: ${ans.expiry}`;
+          }
+        }
+
+        itemsToOrder.push({ ...item, sectionName: section.name, motivo, expiry: ans.expiry || '' });
+      });
+    });
+
+    itemsToOrder.sort((a, b) => {
+      const aIdx = CHECKLIST_DATA.sections.findIndex(s => s.name === a.sectionName);
+      const bIdx = CHECKLIST_DATA.sections.findIndex(s => s.name === b.sectionName);
+      if (aIdx !== bIdx) return aIdx - bIdx;
+      return a.excel_row - b.excel_row;
+    });
+
+    let html = `
+      <div style="border:2px solid #f59e0b;padding:15px;margin-bottom:16px;">
+        <table style="width:100%;border-collapse:collapse;">
+          <tr>
+            <td style="width:12%;text-align:center;vertical-align:middle;border-right:2px solid #f59e0b;padding-right:12px;">
+              <svg viewBox="0 0 100 100" style="width:48px;height:48px;fill:#f59e0b;"><path d="M35 15h30v20h20v30h-20v20H35V65H15V35h20V15z"/></svg>
+            </td>
+            <td style="width:58%;padding-left:15px;vertical-align:middle;">
+              <h2 style="margin:0;font-size:1.2rem;font-weight:800;text-transform:uppercase;">LISTA DE MATERIAL A REPONER</h2>
+              <span style="font-size:0.8rem;font-weight:600;color:#92400e;">PEDIDO SELECCIONADO - SVB TIPO B</span>
+            </td>
+            <td style="width:30%;text-align:right;vertical-align:middle;font-size:0.75rem;line-height:1.4;">
+              <strong>Fecha:</strong> ${fecha}<br>
+              <strong>Matrícula:</strong> ${matricula}<br>
+              <strong>Unidad:</strong> ${unidad}
+            </td>
+          </tr>
+        </table>
+      </div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:14px;font-size:0.8rem;">
+        <tr><td style="border:1px solid #ddd;padding:5px;width:20%;background:#fef9c3;"><strong>Dotación:</strong></td><td style="border:1px solid #ddd;padding:5px;width:80%;font-weight:bold;">${dotacion}</td></tr>
+      </table>
+    `;
+
+    if (itemsToOrder.length === 0) {
+      html += `<p style="text-align:center;font-size:1rem;color:#16a34a;font-weight:700;padding:40px;border:2px dashed #16a34a;border-radius:8px;">NO SE SELECCIONARON ARTÍCULOS PARA REPONER.</p>`;
+    } else {
+      html += `
+        <p style="font-size:0.8rem;color:#92400e;margin-bottom:8px;"><strong>${itemsToOrder.length} artículos</strong> seleccionados para pedido al proveedor:</p>
+        <table style="width:100%;border-collapse:collapse;font-size:0.73rem;">
+          <thead>
+            <tr style="background:#fef3c7;text-align:left;border-bottom:2px solid #f59e0b;">
+              <th style="border:1px solid #ddd;padding:6px;width:10%;">Fila</th>
+              <th style="border:1px solid #ddd;padding:6px;width:48%;">Material</th>
+              <th style="border:1px solid #ddd;padding:6px;width:10%;text-align:center;">Cant. Req.</th>
+              <th style="border:1px solid #ddd;padding:6px;width:32%;">Motivo</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      itemsToOrder.forEach((item, idx) => {
+        html += `
+          <tr style="background:${idx % 2 === 0 ? '#fff' : '#fffbeb'};page-break-inside:avoid;">
+            <td style="border:1px solid #ddd;padding:5px;text-align:center;color:#64748b;">${item.excel_row}</td>
+            <td style="border:1px solid #ddd;padding:5px;font-weight:500;">${item.description}</td>
+            <td style="border:1px solid #ddd;padding:5px;text-align:center;font-weight:700;color:#d97706;">${item.required_qty}</td>
+            <td style="border:1px solid #ddd;padding:5px;font-size:0.7rem;color:#b91c1c;">${item.motivo || 'Seleccionado por el operador'}</td>
+          </tr>
+        `;
+      });
+      html += `</tbody></table>`;
+    }
+
+    reportContainer.innerHTML = html;
+    document.body.appendChild(reportContainer);
+
+    const printStyle = document.createElement('style');
+    printStyle.id = 'dynamicPrintStylesOrder2';
+    printStyle.innerHTML = `@media print{@page{size:A4;margin:10mm 10mm 15mm 10mm;@bottom-center{content:"Página " counter(page) " de " counter(pages);font-family:sans-serif;font-size:7pt;color:#64748b;}}#printReportContainer{display:block!important;counter-reset:page 1;}.app-container,.modal-overlay{display:none!important;}tr{page-break-inside:avoid;}}`;
+    document.head.appendChild(printStyle);
+
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => { reportContainer.remove(); printStyle.remove(); }, 500);
+    }, 250);
+  }
 
   // --- MARCAR TODA LA SECCIÓN COMO NO ---
   btnMarkSectionNo.addEventListener('click', () => {
@@ -1551,4 +1753,8 @@ document.addEventListener('DOMContentLoaded', () => {
   renderSidebarNav();
   renderActiveSection();
   renderPastInspectionsList();
+  // Asegurar que elementos de pedido comiencen ocultos
+  orderSelectionBar.style.display = 'none';
+  colCheckHeader.style.display = 'none';
+  updateOrderCount();
 });

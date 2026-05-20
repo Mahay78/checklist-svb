@@ -793,6 +793,7 @@ body {
 }
 
 /* Ancho específico para columnas */
+.col-check { width: 40px; text-align: center; }
 .col-desc { width: auto; min-width: 250px; }
 .col-qty-req { width: 100px; text-align: center; }
 .col-cumple { width: 150px; text-align: center; }
