@@ -476,7 +476,11 @@ document.addEventListener('DOMContentLoaded', () => {
               expDate.setHours(0, 0, 0, 0);
               const limitDate = new Date(today);
               limitDate.setDate(today.getDate() + 30);
-              return expDate <= limitDate;
+              if (expDate <= limitDate) return true;
+            }
+            // Cantidad real menor que requerida (solo numéricos)
+            if (ans.real_qty && !isNaN(ans.real_qty) && !isNaN(item.required_qty)) {
+              if (Number(ans.real_qty) < Number(item.required_qty)) return true;
             }
             return false;
           default:
@@ -749,13 +753,29 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // --- FUNCIONES PARA EL MODO "A PEDIR" ---
+  function needsOrdering(ans, item) {
+    if (ans.status === 'NO') return true;
+    if (ans.expiry) {
+      const expDate = new Date(ans.expiry);
+      expDate.setHours(0, 0, 0, 0);
+      const limitDate = new Date();
+      limitDate.setHours(0, 0, 0, 0);
+      limitDate.setDate(limitDate.getDate() + 30);
+      if (expDate <= limitDate) return true;
+    }
+    if (ans.real_qty && !isNaN(ans.real_qty) && !isNaN(item.required_qty)) {
+      if (Number(ans.real_qty) < Number(item.required_qty)) return true;
+    }
+    return false;
+  }
+
   function updateOrderCount() {
     let total = 0;
     let selected = 0;
     CHECKLIST_DATA.sections.forEach(section => {
       section.items.forEach(item => {
         const ans = currentState.answers[item.id];
-        if (ans && (ans.status === 'NO' || (ans.expiry && new Date(ans.expiry) <= new Date(Date.now() + 30*24*60*60*1000)))) {
+        if (ans && needsOrdering(ans, item)) {
           total++;
           if (ans.selectedForOrder !== false) selected++;
         }
@@ -813,12 +833,15 @@ document.addEventListener('DOMContentLoaded', () => {
     CHECKLIST_DATA.sections.forEach(section => {
       section.items.forEach(item => {
         const ans = currentState.answers[item.id];
-        if (!ans) return;
-        const selected = ans.selectedForOrder !== false;
-        if (!selected) return;
+        if (!ans || !needsOrdering(ans, item)) return;
+        if (ans.selectedForOrder === false) return;
 
         let motivo = '';
         if (ans.status === 'NO') motivo = ans.obs || 'Sin stock / No disponible';
+        if (ans.real_qty && !isNaN(ans.real_qty) && !isNaN(item.required_qty) && Number(ans.real_qty) < Number(item.required_qty)) {
+          const prefix = motivo ? ' | ' : '';
+          motivo += `${prefix}Cantidad insuficiente: ${ans.real_qty} de ${item.required_qty}`;
+        }
         if (ans.expiry) {
           const expDate = new Date(ans.expiry);
           expDate.setHours(0, 0, 0, 0);
@@ -827,7 +850,7 @@ document.addEventListener('DOMContentLoaded', () => {
           limitDate.setDate(limitDate.getDate() + 30);
           if (expDate <= limitDate) {
             const prefix = motivo ? ' | ' : '';
-            motivo += `${prefix}${expDate <= new Date() ? 'CADUCADO' : 'Próximo a caducar'}: ${ans.expiry}`;
+            motivo += `${prefix}${expDate <= new Date() ? 'CADUCADO' : 'Próximo'}: ${ans.expiry}`;
           }
         }
 
@@ -1576,44 +1599,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const dotacion = currentState.metadata.dotacion || 'No especificada';
 
     let itemsToOrder = [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const limitDate = new Date(today);
-    limitDate.setDate(today.getDate() + 30);
 
     CHECKLIST_DATA.sections.forEach(section => {
       section.items.forEach(item => {
         const ans = currentState.answers[item.id];
-        if (!ans) return;
+        if (!ans || !needsOrdering(ans, item)) return;
 
         let motivo = '';
-        let type = '';
-
-        if (ans.status === 'NO') {
-          motivo = ans.obs || 'Sin stock / No disponible';
-          type = 'NO';
+        if (ans.status === 'NO') motivo = ans.obs || 'Sin stock / No disponible';
+        if (ans.real_qty && !isNaN(ans.real_qty) && !isNaN(item.required_qty) && Number(ans.real_qty) < Number(item.required_qty)) {
+          const prefix = motivo ? ' | ' : '';
+          motivo += `${prefix}Cantidad insuficiente: ${ans.real_qty} de ${item.required_qty}`;
         }
-
         if (ans.expiry) {
           const expDate = new Date(ans.expiry);
           expDate.setHours(0, 0, 0, 0);
+          const limitDate = new Date();
+          limitDate.setHours(0, 0, 0, 0);
+          limitDate.setDate(limitDate.getDate() + 30);
           if (expDate <= limitDate) {
-            type = type || 'CAD';
-            motivo = motivo ? motivo + ' | ' : '';
-            motivo += (expDate <= today) ? 'CADUCADO' : 'Próximo a caducar: ' + ans.expiry;
+            const prefix = motivo ? ' | ' : '';
+            motivo += `${prefix}${expDate <= new Date() ? 'CADUCADO' : 'Próximo'}: ${ans.expiry}`;
           }
         }
 
-        if (type) {
-          itemsToOrder.push({
-            ...item,
-            sectionName: section.name,
-            motivo: motivo,
-            type: type,
-            obs: ans.obs || '',
-            expiry: ans.expiry || ''
-          });
-        }
+        itemsToOrder.push({ ...item, sectionName: section.name, motivo });
       });
     });
 
