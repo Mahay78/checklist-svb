@@ -23,6 +23,7 @@
   
   <!-- Main Stylesheet -->
   <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚑</text></svg>">
 </head>
 <body>
   <div class="app-container">
@@ -39,7 +40,7 @@
             <span>Ambulancia Clase B</span>
           </div>
         </div>
-        <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Cerrar menú">
+        <button type="button" class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Cerrar menú">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
@@ -72,13 +73,13 @@
       
       <!-- Mobile Toolbar Header -->
       <header class="mobile-header">
-        <button class="menu-toggle-btn" id="menuToggleBtn" aria-label="Abrir menú">
+        <button type="button" class="menu-toggle-btn" id="menuToggleBtn" aria-label="Abrir menú">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
         <h1 class="mobile-title">Checklist SVB</h1>
-        <button class="theme-toggle-btn" id="themeToggleBtnMobile" aria-label="Cambiar tema">
+        <button type="button" class="theme-toggle-btn" id="themeToggleBtnMobile" aria-label="Cambiar tema">
           <svg viewBox="0 0 24 24" class="sun-icon" fill="none" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
           </svg>
@@ -94,7 +95,7 @@
         
         <div class="header-actions">
           <!-- Theme Toggle -->
-          <button class="theme-toggle-btn glass-btn" id="themeToggleBtn" title="Cambiar Tema" aria-label="Cambiar tema">
+          <button type="button" class="theme-toggle-btn glass-btn" id="themeToggleBtn" title="Cambiar Tema" aria-label="Cambiar tema">
             <svg viewBox="0 0 24 24" class="sun-icon" fill="none" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
             </svg>
@@ -110,7 +111,7 @@
           </div>
           
           <!-- Inspection Management Actions -->
-          <button class="action-btn primary-btn" id="btnStats" title="Ver Estadísticas Completa">
+          <button type="button" class="action-btn primary-btn" id="btnStats" title="Ver Estadísticas Completa">
             <svg viewBox="0 0 24 24" class="btn-icon" fill="none" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z" />
               <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z" />
@@ -129,7 +130,7 @@
             </svg>
             <h3>Datos de Control del Vehículo</h3>
           </div>
-          <button class="toggle-card-btn" id="toggleMetadataBtn" aria-expanded="true" aria-label="Contraer sección">
+          <button type="button" class="toggle-card-btn" id="toggleMetadataBtn" aria-expanded="true" aria-label="Contraer sección">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="arrow-svg">
               <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
             </svg>
@@ -210,11 +211,11 @@
         </div>
         
         <div class="filter-group">
-          <button class="filter-btn active" data-filter="all">Todos</button>
-          <button class="filter-btn" data-filter="pending">Pendientes</button>
-          <button class="filter-btn" data-filter="nocumply">No Cumplen</button>
-          <button class="filter-btn" data-filter="expiry">Caducados/Próximos</button>
-          <button class="filter-btn" data-filter="obs">Con Observaciones</button>
+          <button type="button" class="filter-btn active" data-filter="all">Todos</button>
+          <button type="button" class="filter-btn" data-filter="pending">Pendientes</button>
+          <button type="button" class="filter-btn" data-filter="nocumply">No Cumplen</button>
+          <button type="button" class="filter-btn" data-filter="expiry">Caducados/Próximos</button>
+          <button type="button" class="filter-btn" data-filter="obs">Con Observaciones</button>
         </div>
       </section>
       
@@ -222,7 +223,7 @@
       <div class="active-category-banner">
         <h2 id="activeSectionTitle">CARACTERÍSTICAS GENERALES CLASE DE AMBULANCIA</h2>
         <div style="display:flex;align-items:center;gap:8px;">
-          <button class="action-btn danger-btn" id="btnMarkSectionNo" style="padding:4px 10px;font-size:0.75rem;" title="Marcar todos los ítems de esta sección como NO CUMPLE">Marcar Sección NO</button>
+          <button type="button" class="action-btn glass-btn" id="btnMarkSectionNo" style="padding:4px 10px;font-size:0.75rem;color:var(--warning);border-color:rgba(245,158,11,0.3);" title="Marcar todos los ítems de esta sección como NO CUMPLE">Marcar Sección NO</button>
           <span class="section-badge" id="activeSectionProgress">0/7 ítems</span>
         </div>
       </div>
@@ -253,13 +254,13 @@
       
       <!-- Table Navigation Buttons -->
       <div class="table-navigation-bar">
-        <button class="nav-btn glass-btn" id="btnPrevSection">
+        <button type="button" class="nav-btn glass-btn" id="btnPrevSection">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
           </svg>
           <span>Sección Anterior</span>
         </button>
-        <button class="nav-btn glass-btn" id="btnNextSection">
+        <button type="button" class="nav-btn glass-btn" id="btnNextSection">
           <span>Siguiente Sección</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
             <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
@@ -281,21 +282,21 @@
         <div class="report-finalize-actions">
           <p>Una vez completada la inspección, puedes descargar el informe o exportar los datos para copias de seguridad.</p>
           <div class="action-buttons-stack">
-              <button class="action-btn primary-btn flex-btn" id="btnExportPDF">
+              <button type="button" class="action-btn primary-btn flex-btn" id="btnExportPDF">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0a2.25 2.25 0 01-2.24 2.24H8.58A2.25 2.25 0 016.34 18m11.318-3.09c.48-.061.95-.126 1.41-.196m-1.41.196l.666 5.33a2.25 2.25 0 002.227 1.97h.046a2.25 2.25 0 002.227-1.97l.666-5.33a2.247 2.247 0 00-1.41-.197m-1.41.197h1.41" />
                 </svg>
                 <span>Descargar Acta PDF</span>
               </button>
               
-              <button class="action-btn secondary-btn flex-btn" id="btnExportPedido" style="background-color: var(--warning-glow); border-color: rgba(245, 158, 11, 0.3); color: var(--warning);">
+              <button type="button" class="action-btn secondary-btn flex-btn" id="btnExportPedido" style="background-color: var(--warning-glow); border-color: rgba(245, 158, 11, 0.3); color: var(--warning);">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                 </svg>
                 <span>Material a Pedir (PDF)</span>
               </button>
               
-              <button class="action-btn secondary-btn flex-btn" id="btnExportExcel">
+              <button type="button" class="action-btn secondary-btn flex-btn" id="btnExportExcel">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                 </svg>
@@ -303,16 +304,16 @@
               </button>
               
               <div class="backup-actions">
-                <button class="action-btn text-btn flex-btn" id="btnSaveJSON">
+                <button type="button" class="action-btn text-btn flex-btn" id="btnSaveJSON">
                   <span>Guardar Backup JSON</span>
                 </button>
-                <button class="action-btn text-btn flex-btn" id="btnLoadJSONTrigger">
+                <button type="button" class="action-btn text-btn flex-btn" id="btnLoadJSONTrigger">
                   <span>Restaurar Backup JSON</span>
                 </button>
                 <input type="file" id="jsonFileInput" accept=".json" style="display: none;">
               </div>
               
-              <button class="action-btn danger-btn flex-btn" id="btnResetAll">
+              <button type="button" class="action-btn danger-btn flex-btn" id="btnResetAll">
                 <span>Reiniciar Checklist</span>
               </button>
           </div>
@@ -341,7 +342,7 @@
     <div class="modal-card glass-panel">
       <div class="modal-header">
         <h3>Informe Estadístico y de Incidencias</h3>
-        <button class="modal-close-btn" id="modalCloseBtn" aria-label="Cerrar modal">
+        <button type="button" class="modal-close-btn" id="modalCloseBtn" aria-label="Cerrar modal">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
@@ -391,7 +392,7 @@
       </div>
       
       <div class="modal-footer">
-        <button class="action-btn primary-btn" id="modalOkBtn">Volver al Checklist</button>
+        <button type="button" class="action-btn primary-btn" id="modalOkBtn">Volver al Checklist</button>
       </div>
     </div>
   </div>

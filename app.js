@@ -26,8 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Búsqueda global activa (si es no vacía, anula la sección activa en pantalla)
   let globalSearchQuery = '';
   // Timestamp del último cambio para autoguardado
-  let lastChangeTime = Date.now();
-  // Flag para beforeunload
+  let lastSavedTimestamp = Date.now();
   let hasUnsavedChanges = false;
 
   // --- REGISTRO DEL SERVICE WORKER ---
@@ -161,8 +160,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- PERSISTENCIA Y INICIALIZACIÓN DE ESTADO ---
   function saveStateToLocalStorage() {
     currentState.lastSaved = Date.now();
-    localStorage.setItem('svb_checklist_state', JSON.stringify(currentState));
+    lastSavedTimestamp = Date.now();
     hasUnsavedChanges = false;
+    localStorage.setItem('svb_checklist_state', JSON.stringify(currentState));
     updateAutosaveTimestamp();
   }
 
@@ -219,7 +219,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const bindMetadataInput = (inputEl, key) => {
     inputEl.addEventListener('input', () => {
       currentState.metadata[key] = inputEl.value;
+      hasUnsavedChanges = true;
       saveStateToLocalStorage();
+      updateDashboardStats();
     });
   };
 
@@ -399,6 +401,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- RENDERIZADO DE LA TABLA DE CHECKLIST INTERACTIVA ---
   function renderActiveSection() {
+    // Preservar scroll vertical antes de re-renderizar
+    const wrapper = checklistTableBody.closest('.checklist-table-wrapper');
+    const prevScrollTop = wrapper ? wrapper.scrollTop : 0;
+
     checklistTableBody.innerHTML = '';
     let itemsToRender = [];
     let isGlobalSearchActive = globalSearchQuery !== '';
@@ -413,8 +419,11 @@ document.addEventListener('DOMContentLoaded', () => {
               ...item,
               sectionName: section.name,
               sectionIndex: sIdx
-            });
-          }
+    });
+
+    // Restaurar scroll
+    if (wrapper) requestAnimationFrame(() => wrapper.scrollTop = prevScrollTop);
+  }
         });
       });
       activeSectionProgress.textContent = `${itemsToRender.length} coincidencias`;
@@ -450,7 +459,10 @@ document.addEventListener('DOMContentLoaded', () => {
           case 'expiry':
             if (!ans.expiry) return false;
             const expDate = new Date(ans.expiry);
-            return expDate <= today || expDate <= limitDate;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            expDate.setHours(0, 0, 0, 0);
+            return expDate <= today;
           case 'obs':
             return ans.obs && ans.obs.trim() !== '';
           default:
@@ -485,7 +497,7 @@ document.addEventListener('DOMContentLoaded', () => {
       descText.textContent = item.description;
       const refText = document.createElement('span');
       refText.className = 'excel-ref';
-      refText.textContent = `${isGlobalSearchActive ? item.sectionName + ' | ' : ''}Fila Excel: ${item.excel_row}`;
+      refText.textContent = `${item.sectionName} | Fila Excel: ${item.excel_row}`;
       cellDesc.appendChild(descText);
       cellDesc.appendChild(refText);
 
@@ -531,7 +543,8 @@ document.addEventListener('DOMContentLoaded', () => {
       copyBtn.title = 'Copiar cantidad requerida';
       copyBtn.innerHTML = `
         <svg viewBox="0 0 24 24" class="copy-svg" fill="none" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 00-3.7-3.7 48.656 48.656 0 00-7.324 0 4.006 4.006 0 00-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3l-3-3M3 12c0 1.232.046 2.453.138 3.662a4.006 4.006 0 003.7 3.7 48.656 48.656 0 007.324 0 4.006 4.006 0 003.7-3.7c.017-.22.032-.441.046-.662M3 12l-3 3m3-3l3 3" />
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+          <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
         </svg>
       `;
       copyBtn.setAttribute('aria-label', `Copiar requerido para ${item.description}`);
@@ -580,6 +593,7 @@ document.addEventListener('DOMContentLoaded', () => {
           currentState.answers[item.id] = { status: '', real_qty: '', expiry: '', obs: '' };
         }
         currentState.answers[item.id] = { ...currentState.answers[item.id], ...updates };
+        hasUnsavedChanges = true;
         saveStateToLocalStorage();
         updateDashboardStats();
       };
@@ -703,11 +717,21 @@ document.addEventListener('DOMContentLoaded', () => {
         currentState.answers[item.id] = { status: '', real_qty: '', expiry: '', obs: '' };
       }
       currentState.answers[item.id].status = 'NO';
+      // Actualizar fila directamente sin reconstruir toda la tabla
+      const row = document.getElementById(`row_${item.id}`);
+      if (row) {
+        row.className = 'table-row row-nok';
+        const btnSi = row.querySelector('.comp-btn-si');
+        const btnNo = row.querySelector('.comp-btn-no');
+        if (btnSi) btnSi.classList.remove('active');
+        if (btnNo) btnNo.classList.add('active');
+      }
     });
+
+    hasUnsavedChanges = true;
     saveStateToLocalStorage();
     updateDashboardStats();
     renderSidebarNav();
-    renderActiveSection();
   });
 
   // --- ATAJOS DE TECLADO: FLECHAS ← → PARA NAVEGAR SECCIONES ---
@@ -731,8 +755,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- CONFIRMACIÓN BEFOREUNLOAD ---
   window.addEventListener('beforeunload', (e) => {
-    const stats = getInventoryStats();
-    if (stats.pending < stats.total) {
+    if (hasUnsavedChanges) {
       e.preventDefault();
       e.returnValue = '';
     }
@@ -906,6 +929,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- EXPORTAR HOJA EXCEL EN FORMATO CSV CON BOM ---
   btnExportExcel.addEventListener('click', () => {
+    const stats = getInventoryStats();
+    if (stats.pending > 0 && !confirm(`Atención: ${stats.pending} artículos pendientes. ¿Exportar CSV de todas formas?`)) return;
+
     // 1. Cabecera del archivo CSV
     let csvContent = '\uFEFF'; // BOM UTF-8 para que Excel lo abra con las eñes y tildes perfectas
     csvContent += 'Sección;Fila Excel;Elemento de Inspección;Cantidad Requerida;¿Cumple (SI/NO)?;Cantidad Real;Caducidad;Observaciones e Incidencias\n';
@@ -1075,7 +1101,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <span style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase; color: #334155;">AUDITORÍA DE INVENTARIO Y DOTACIÓN - SERVICIO DE URGENCIAS CANARIO</span>
             </td>
             <td style="width: 30%; text-align: right; vertical-align: middle; font-size: 0.78rem; line-height: 1.35;">
-              <strong>Código Acta:</strong> SVB-CLB-${insData.timestamp.toString().substring(5, 13)}<br>
+              <strong>Código Acta:</strong> SVB-CLB-${insData.timestamp.toString().slice(-8)}<br>
               <strong>Fecha Emisión:</strong> ${new Date(insData.timestamp).toLocaleString('es-ES')}<br>
               <strong>Inspector PWA:</strong> Offline Native WebApp
             </td>
@@ -1512,8 +1538,6 @@ document.addEventListener('DOMContentLoaded', () => {
       };
       currentState.activeSectionIndex = 0;
       saveStateToLocalStorage();
-
-      // Limpiar canvas
 
       // Recargar interfaz
       alert('Checklist reiniciado con éxito.');
