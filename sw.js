@@ -1,4 +1,4 @@
-const CACHE_NAME = "checklist-svb-cache-v1";
+const CACHE_NAME = "checklist-svb-cache-v2";
 const ASSETS = [
   "./",
   "./index.html",
@@ -36,22 +36,19 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Cache-First (or falling back to network) strategy for instant offline loads
+// Stale-while-revalidate: instant offline loads + always fresh on next visit
 self.addEventListener("fetch", (event) => {
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        // Return from cache, and fetch in background to update cache (stale-while-revalidate style)
-        fetch(event.request)
-          .then((networkResponse) => {
-            if (networkResponse.status === 200) {
-              caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse));
-            }
-          })
-          .catch(() => { /* Ignore background fetch failures when offline */ });
-        return cachedResponse;
-      }
-      return fetch(event.request);
+      const fetchPromise = fetch(event.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return networkResponse;
+      }).catch(() => cachedResponse);
+
+      return cachedResponse || fetchPromise;
     })
   );
 });
