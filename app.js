@@ -18,8 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     answers: {}, // Guardará { itemId: { status: 'SI'|'NO'|'', real_qty: '', expiry: '', obs: '' } }
     activeSectionIndex: 0,
-    signatureData: '', // Base64 de la firma del inspector
-    signatureDataJefe: '', // Base64 de la firma del jefe de unidad
     pastInspections: [] // Historial de inspecciones archivadas
   };
 
@@ -61,7 +59,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const sidebarNav = document.getElementById('sidebarNav');
   const sidebarProgressPct = document.getElementById('sidebarProgressPct');
   const sidebarProgressBarFill = document.getElementById('sidebarProgressBarFill');
-  
   const menuToggleBtn = document.getElementById('menuToggleBtn');
   const sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
   const appSidebar = document.getElementById('appSidebar');
@@ -103,12 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnPrevSection = document.getElementById('btnPrevSection');
   const btnNextSection = document.getElementById('btnNextSection');
 
-  // Firma
-  const signatureCanvas = document.getElementById('signatureCanvas');
-  const btnClearSignature = document.getElementById('btnClearSignature');
-  const signatureCanvasJefe = document.getElementById('signatureCanvasJefe');
-  const btnClearSignatureJefe = document.getElementById('btnClearSignatureJefe');
-
   // Acciones de Documento
   const btnExportPDF = document.getElementById('btnExportPDF');
   const btnExportPedido = document.getElementById('btnExportPedido');
@@ -124,7 +115,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- CONTROL DEL MENÚ MÓVIL LATERAL ---
   menuToggleBtn.addEventListener('click', () => appSidebar.classList.add('open'));
   sidebarCloseBtn.addEventListener('click', () => appSidebar.classList.remove('open'));
-  
   // Cerrar sidebar al hacer clic en un enlace de sección en pantallas móviles
   function closeSidebarOnMobile() {
     if (window.innerWidth <= 1024) {
@@ -148,7 +138,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateThemeToggleIcons(theme) {
     const sunIcons = document.querySelectorAll('.sun-icon');
     const moonIcons = document.querySelectorAll('.moon-icon');
-    
     if (theme === 'light') {
       sunIcons.forEach(icon => icon.style.display = 'none');
       moonIcons.forEach(icon => icon.style.display = 'block');
@@ -167,131 +156,6 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleMetadataBtn.setAttribute('aria-expanded', !isExpanded);
     toggleMetadataBtn.classList.toggle('collapsed');
     metadataGrid.classList.toggle('collapsed');
-  });
-
-  // --- LOGICA DE FIRMA DIGITAL (CANVAS) ---
-  const ctx = signatureCanvas.getContext('2d');
-  let isDrawing = false;
-  let lastX = 0;
-  let lastY = 0;
-
-  const ctxJefe = signatureCanvasJefe.getContext('2d');
-  let isDrawingJefe = false;
-  let lastXJefe = 0;
-  let lastYJefe = 0;
-
-  // Ajustar resolución del canvas para pantallas retina / táctiles
-  function resizeCanvas() {
-    [signatureCanvas, signatureCanvasJefe].forEach(canvas => {
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * window.devicePixelRatio;
-      canvas.height = rect.height * window.devicePixelRatio;
-      const c = canvas.getContext('2d');
-      c.scale(window.devicePixelRatio, window.devicePixelRatio);
-      c.strokeStyle = '#020617';
-      c.lineWidth = 2.5;
-      c.lineCap = 'round';
-      c.lineJoin = 'round';
-    });
-
-    // Redibujar firmas si existen
-    if (currentState.signatureData) {
-      const img = new Image();
-      img.onload = () => ctx.drawImage(img, 0, 0, signatureCanvas.getBoundingClientRect().width, signatureCanvas.getBoundingClientRect().height);
-      img.src = currentState.signatureData;
-    }
-    if (currentState.signatureDataJefe) {
-      const img = new Image();
-      img.onload = () => ctxJefe.drawImage(img, 0, 0, signatureCanvasJefe.getBoundingClientRect().width, signatureCanvasJefe.getBoundingClientRect().height);
-      img.src = currentState.signatureDataJefe;
-    }
-  }
-
-  window.addEventListener('resize', resizeCanvas);
-  setTimeout(resizeCanvas, 300);
-
-  function getMousePos(e, canvas) {
-    const rect = canvas.getBoundingClientRect();
-    if (e.touches && e.touches.length > 0) {
-      return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
-    }
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
-  }
-
-  // --- Canvas Inspector ---
-  function startDrawing(e) {
-    e.preventDefault();
-    isDrawing = true;
-    const pos = getMousePos(e, signatureCanvas);
-    lastX = pos.x; lastY = pos.y;
-  }
-  function draw(e) {
-    if (!isDrawing) return;
-    e.preventDefault();
-    const pos = getMousePos(e, signatureCanvas);
-    ctx.beginPath();
-    ctx.moveTo(lastX, lastY);
-    ctx.lineTo(pos.x, pos.y);
-    ctx.stroke();
-    lastX = pos.x; lastY = pos.y;
-  }
-  function stopDrawing() {
-    if (isDrawing) {
-      isDrawing = false;
-      currentState.signatureData = signatureCanvas.toDataURL();
-      saveStateToLocalStorage();
-    }
-  }
-
-  signatureCanvas.addEventListener('mousedown', startDrawing);
-  signatureCanvas.addEventListener('mousemove', draw);
-  window.addEventListener('mouseup', stopDrawing);
-  signatureCanvas.addEventListener('touchstart', startDrawing, { passive: false });
-  signatureCanvas.addEventListener('touchmove', draw, { passive: false });
-  window.addEventListener('touchend', stopDrawing);
-
-  btnClearSignature.addEventListener('click', () => {
-    ctx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
-    currentState.signatureData = '';
-    saveStateToLocalStorage();
-  });
-
-  // --- Canvas Jefe de Unidad ---
-  function startDrawingJefe(e) {
-    e.preventDefault();
-    isDrawingJefe = true;
-    const pos = getMousePos(e, signatureCanvasJefe);
-    lastXJefe = pos.x; lastYJefe = pos.y;
-  }
-  function drawJefe(e) {
-    if (!isDrawingJefe) return;
-    e.preventDefault();
-    const pos = getMousePos(e, signatureCanvasJefe);
-    ctxJefe.beginPath();
-    ctxJefe.moveTo(lastXJefe, lastYJefe);
-    ctxJefe.lineTo(pos.x, pos.y);
-    ctxJefe.stroke();
-    lastXJefe = pos.x; lastYJefe = pos.y;
-  }
-  function stopDrawingJefe() {
-    if (isDrawingJefe) {
-      isDrawingJefe = false;
-      currentState.signatureDataJefe = signatureCanvasJefe.toDataURL();
-      saveStateToLocalStorage();
-    }
-  }
-
-  signatureCanvasJefe.addEventListener('mousedown', startDrawingJefe);
-  signatureCanvasJefe.addEventListener('mousemove', drawJefe);
-  window.addEventListener('mouseup', stopDrawingJefe);
-  signatureCanvasJefe.addEventListener('touchstart', startDrawingJefe, { passive: false });
-  signatureCanvasJefe.addEventListener('touchmove', drawJefe, { passive: false });
-  window.addEventListener('touchend', stopDrawingJefe);
-
-  btnClearSignatureJefe.addEventListener('click', () => {
-    ctxJefe.clearRect(0, 0, signatureCanvasJefe.width, signatureCanvasJefe.height);
-    currentState.signatureDataJefe = '';
-    saveStateToLocalStorage();
   });
 
   // --- PERSISTENCIA Y INICIALIZACIÓN DE ESTADO ---
@@ -320,7 +184,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const parsed = JSON.parse(saved);
         // Mezclar con el estado inicial para evitar problemas con actualizaciones de estructura
         currentState = { ...currentState, ...parsed };
-        
         // Cargar metadatos en pantalla
         metaDotacion.value = currentState.metadata.dotacion || '';
         metaMatricula.value = currentState.metadata.matricula || '';
@@ -427,7 +290,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateDashboardStats() {
     const stats = getInventoryStats();
-    
     // Contadores de cabecera
     statTotalItems.textContent = stats.total;
     statComplies.textContent = stats.complies;
@@ -469,7 +331,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const { total, answered } = getSectionProgress(section);
       const isCompleted = total === answered && total > 0;
-      
       const navItem = document.createElement('button');
       navItem.className = `nav-section-item ${index === currentState.activeSectionIndex && globalSearchQuery === '' ? 'active' : ''} ${isCompleted ? 'completed' : ''}`;
       navItem.setAttribute('aria-label', `Categoría: ${section.name}. Progreso: ${answered} de ${total}`);
@@ -489,10 +350,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Desactivar buscador global si estaba activo
         globalSearchQuery = '';
         globalSearch.value = '';
-        
         currentState.activeSectionIndex = index;
         saveStateToLocalStorage();
-        
         // Actualizar visualización
         renderSidebarNav();
         renderActiveSection();
@@ -521,7 +380,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!dateStr) return '';
     const today = new Date();
     const expiry = new Date(dateStr);
-    
     // Poner a cero horas para comparar sólo días
     today.setHours(0, 0, 0, 0);
     expiry.setHours(0, 0, 0, 0);
@@ -542,14 +400,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- RENDERIZADO DE LA TABLA DE CHECKLIST INTERACTIVA ---
   function renderActiveSection() {
     checklistTableBody.innerHTML = '';
-    
     let itemsToRender = [];
     let isGlobalSearchActive = globalSearchQuery !== '';
 
     if (isGlobalSearchActive) {
       // Buscar en todo el inventario
       activeSectionTitle.textContent = `Resultados de Búsqueda: "${globalSearchQuery}"`;
-      
       CHECKLIST_DATA.sections.forEach((section, sIdx) => {
         section.items.forEach(item => {
           if (item.description.toLowerCase().includes(globalSearchQuery.toLowerCase())) {
@@ -561,13 +417,11 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         });
       });
-      
       activeSectionProgress.textContent = `${itemsToRender.length} coincidencias`;
     } else {
       // Mostrar la sección activa actual
       const section = CHECKLIST_DATA.sections[currentState.activeSectionIndex];
       activeSectionTitle.textContent = section.name;
-      
       const { total, answered } = getSectionProgress(section);
       activeSectionProgress.textContent = `${answered}/${total} ítems`;
 
@@ -588,7 +442,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       itemsToRender = itemsToRender.filter(item => {
         const ans = currentState.answers[item.id] || { status: '', real_qty: '', expiry: '', obs: '' };
-        
         switch (activeFilter) {
           case 'pending':
             return ans.status === '';
@@ -620,7 +473,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Inyectar filas en el tbody
     itemsToRender.forEach(item => {
       const ans = currentState.answers[item.id] || { status: '', real_qty: '', expiry: '', obs: '' };
-      
       const row = document.createElement('tr');
       row.className = `table-row ${ans.status === 'SI' ? 'row-ok' : ''} ${ans.status === 'NO' ? 'row-nok' : ''}`;
       row.id = `row_${item.id}`;
@@ -628,15 +480,12 @@ document.addEventListener('DOMContentLoaded', () => {
       // 1. Columna Descripción
       const cellDesc = document.createElement('td');
       cellDesc.className = 'col-desc';
-      
       const descText = document.createElement('span');
       descText.className = 'item-desc-text';
       descText.textContent = item.description;
-      
       const refText = document.createElement('span');
       refText.className = 'excel-ref';
       refText.textContent = `${isGlobalSearchActive ? item.sectionName + ' | ' : ''}Fila Excel: ${item.excel_row}`;
-      
       cellDesc.appendChild(descText);
       cellDesc.appendChild(refText);
 
@@ -644,7 +493,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const cellReq = document.createElement('td');
       cellReq.className = 'col-qty-req';
       cellReq.style.textAlign = 'center';
-      
       const badgeReq = document.createElement('span');
       badgeReq.className = 'badge-qty';
       badgeReq.textContent = item.required_qty;
@@ -653,20 +501,16 @@ document.addEventListener('DOMContentLoaded', () => {
       // 3. Columna ¿Cumple? Selector SI/NO Premium
       const cellCumple = document.createElement('td');
       cellCumple.className = 'col-cumple';
-      
       const selectorWrapper = document.createElement('div');
       selectorWrapper.className = 'compliance-selector';
-      
       const btnSi = document.createElement('button');
       btnSi.className = `comp-btn comp-btn-si ${ans.status === 'SI' ? 'active' : ''}`;
       btnSi.textContent = 'SÍ';
       btnSi.setAttribute('aria-label', `Marcar ${item.description} como Sí Cumple`);
-      
       const btnNo = document.createElement('button');
       btnNo.className = `comp-btn comp-btn-no ${ans.status === 'NO' ? 'active' : ''}`;
       btnNo.textContent = 'NO';
       btnNo.setAttribute('aria-label', `Marcar ${item.description} como No Cumple`);
-      
       selectorWrapper.appendChild(btnSi);
       selectorWrapper.appendChild(btnNo);
       cellCumple.appendChild(selectorWrapper);
@@ -674,17 +518,14 @@ document.addEventListener('DOMContentLoaded', () => {
       // 4. Columna Cantidad Real
       const cellReal = document.createElement('td');
       cellReal.className = 'col-qty-real';
-      
       const qtyGroup = document.createElement('div');
       qtyGroup.className = 'qty-input-group';
-      
       const qtyInput = document.createElement('input');
       qtyInput.type = 'text';
       qtyInput.className = 'qty-input';
       qtyInput.value = ans.real_qty;
       qtyInput.placeholder = '-';
       qtyInput.setAttribute('aria-label', `Cantidad real para ${item.description}`);
-      
       const copyBtn = document.createElement('button');
       copyBtn.className = 'qty-copy-btn';
       copyBtn.title = 'Copiar cantidad requerida';
@@ -694,7 +535,6 @@ document.addEventListener('DOMContentLoaded', () => {
         </svg>
       `;
       copyBtn.setAttribute('aria-label', `Copiar requerido para ${item.description}`);
-      
       qtyGroup.appendChild(qtyInput);
       qtyGroup.appendChild(copyBtn);
       cellReal.appendChild(qtyGroup);
@@ -702,30 +542,25 @@ document.addEventListener('DOMContentLoaded', () => {
       // 5. Columna Caducidad
       const cellCaducidad = document.createElement('td');
       cellCaducidad.className = 'col-caducidad';
-      
       const expiryWrapper = document.createElement('div');
       expiryWrapper.className = 'expiry-input-wrapper';
-      
       const expiryInput = document.createElement('input');
       expiryInput.type = 'date';
       expiryInput.className = `expiry-input ${getExpiryClass(ans.expiry)}`;
       expiryInput.value = ans.expiry;
       expiryInput.setAttribute('aria-label', `Fecha de caducidad para ${item.description}`);
-      
       expiryWrapper.appendChild(expiryInput);
       cellCaducidad.appendChild(expiryWrapper);
 
       // 6. Columna Observaciones / Incidencias
       const cellObs = document.createElement('td');
       cellObs.className = 'col-obs';
-      
       const obsInput = document.createElement('input');
       obsInput.type = 'text';
       obsInput.className = 'obs-input';
       obsInput.value = ans.obs;
       obsInput.placeholder = 'Detalles de la anomalía...';
       obsInput.setAttribute('aria-label', `Observaciones para ${item.description}`);
-      
       cellObs.appendChild(obsInput);
 
       // Agregar celdas a la fila
@@ -821,10 +656,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const count = CHECKLIST_DATA.sections.length;
     currentState.activeSectionIndex = (currentState.activeSectionIndex - 1 + count) % count;
     saveStateToLocalStorage();
-    
     renderSidebarNav();
     renderActiveSection();
-    
     document.querySelector('.active-category-banner').scrollIntoView({ behavior: 'smooth' });
   });
 
@@ -835,17 +668,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const count = CHECKLIST_DATA.sections.length;
     currentState.activeSectionIndex = (currentState.activeSectionIndex + 1) % count;
     saveStateToLocalStorage();
-    
     renderSidebarNav();
     renderActiveSection();
-    
     document.querySelector('.active-category-banner').scrollIntoView({ behavior: 'smooth' });
   });
 
   // --- BUSCADOR GLOBAL DE ÍTEMS ---
   globalSearch.addEventListener('input', () => {
     globalSearchQuery = globalSearch.value.trim().toLowerCase();
-    
     // Refrescar vistas
     renderActiveSection();
     renderSidebarNav(); // Deseleccionará la sección en el menú lateral si hay búsqueda
@@ -911,7 +741,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- HISTORIAL DE INSPECCIONES EN ESTE DISPOSITIVO ---
   function renderPastInspectionsList() {
     pastInspectionsList.innerHTML = '';
-    
     if (currentState.pastInspections.length === 0) {
       pastInspectionsList.innerHTML = '<p class="empty-list-text">No hay inspecciones previas guardadas en este navegador.</p>';
       return;
@@ -933,23 +762,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const details = document.createElement('div');
       details.className = 'past-inspection-details';
-      
       const title = document.createElement('h5');
       title.style.margin = '0 0 4px 0';
       title.style.fontSize = '0.95rem';
       title.style.fontWeight = '700';
       title.textContent = `Fecha: ${ins.date} | Matrícula: ${ins.matricula}`;
-      
       const metaText = document.createElement('span');
       metaText.style.fontSize = '0.8rem';
       metaText.style.color = 'var(--text-muted)';
       metaText.textContent = `Dotación: ${ins.dotacion || 'N/D'} | Unidad: ${ins.unidad || 'N/D'}`;
-      
       const statsBadge = document.createElement('div');
       statsBadge.style.marginTop = '6px';
       statsBadge.style.fontSize = '0.78rem';
       statsBadge.style.fontWeight = '600';
-      
       const compl = ins.stats.complies;
       const ncompl = ins.stats.nonComplies;
       const pend = ins.stats.pending;
@@ -1015,7 +840,6 @@ document.addEventListener('DOMContentLoaded', () => {
     CHECKLIST_DATA.sections.forEach(section => {
       section.items.forEach(item => {
         const ans = currentState.answers[item.id];
-        
         // Incluimos en incidencias si no cumple o si tiene observaciones
         const hasNo = ans && ans.status === 'NO';
         const hasTextObs = ans && ans.obs && ans.obs.trim() !== '';
@@ -1027,18 +851,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
           const descWrapper = document.createElement('div');
           descWrapper.className = 'issue-item-details';
-          
           const strong = document.createElement('strong');
           strong.textContent = item.description;
-          
           const detailsSpan = document.createElement('span');
           detailsSpan.textContent = `Categoría: ${section.name} | Fila Excel: ${item.excel_row}`;
-          
           const obsParagraph = document.createElement('p');
           obsParagraph.style.margin = '4px 0 0 0';
           obsParagraph.style.fontSize = '0.82rem';
           obsParagraph.style.color = 'var(--text-main)';
-          
           if (hasTextObs) {
             obsParagraph.innerHTML = `<strong>Observación:</strong> ${ans.obs}`;
           } else {
@@ -1052,7 +872,6 @@ document.addEventListener('DOMContentLoaded', () => {
           const badge = document.createElement('span');
           badge.className = 'issue-badge-tag';
           badge.textContent = ans.status === 'NO' ? 'NO CUMPLE' : 'OBS';
-          
           if (ans.status !== 'NO') {
             badge.style.backgroundColor = 'var(--primary-glow)';
             badge.style.color = 'var(--primary)';
@@ -1080,7 +899,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeModal = () => statsModal.classList.remove('open');
   modalCloseBtn.addEventListener('click', closeModal);
   modalOkBtn.addEventListener('click', closeModal);
-  
   // Cerrar modal al hacer clic en el fondo oscuro
   statsModal.addEventListener('click', (e) => {
     if (e.target === statsModal) closeModal();
@@ -1096,7 +914,6 @@ document.addEventListener('DOMContentLoaded', () => {
     CHECKLIST_DATA.sections.forEach(section => {
       section.items.forEach(item => {
         const ans = currentState.answers[item.id] || { status: '', real_qty: '', expiry: '', obs: '' };
-        
         // Saneamiento de textos para evitar romper el formato CSV
         const escapeCsv = (str) => {
           if (!str) return '';
@@ -1118,10 +935,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // 3. Crear Blob e iniciar la descarga
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
-    
     const matricula = currentState.metadata.matricula || 'SinMatricula';
     const fechaStr = currentState.metadata.fecha || new Date().toISOString().split('T')[0];
-    
     link.href = URL.createObjectURL(blob);
     link.setAttribute('download', `Checklist_SVB_${matricula}_${fechaStr}.csv`);
     document.body.appendChild(link);
@@ -1134,7 +949,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const dataStr = JSON.stringify(currentState, null, 2);
     const blob = new Blob([dataStr], { type: 'application/json' });
     const link = document.createElement('a');
-    
     const matricula = currentState.metadata.matricula || 'SinMatricula';
     const fechaStr = currentState.metadata.fecha || new Date().toISOString().split('T')[0];
 
@@ -1158,7 +972,6 @@ document.addEventListener('DOMContentLoaded', () => {
     reader.onload = (event) => {
       try {
         const parsed = JSON.parse(event.target.result);
-        
         // Validación mínima
         if (parsed && typeof parsed === 'object' && parsed.answers && parsed.metadata) {
           if (confirm('Se ha detectado una copia de seguridad válida. ¿Deseas restaurarla y sobrescribir las respuestas actuales en este dispositivo?')) {
@@ -1166,17 +979,13 @@ document.addEventListener('DOMContentLoaded', () => {
               metadata: parsed.metadata,
               answers: parsed.answers,
               activeSectionIndex: parsed.activeSectionIndex || 0,
-              signatureData: parsed.signatureData || '',
-              signatureDataJefe: parsed.signatureDataJefe || '',
               pastInspections: parsed.pastInspections || currentState.pastInspections
             };
-            
             // Persistir
             saveStateToLocalStorage();
             if (currentState.pastInspections.length > 0) {
               localStorage.setItem('svb_past_inspections', JSON.stringify(currentState.pastInspections));
             }
-            
             // Recargar interfaz
             alert('¡Inspección restaurada con éxito!');
             location.reload();
@@ -1197,7 +1006,6 @@ document.addEventListener('DOMContentLoaded', () => {
   btnExportPDF.addEventListener('click', () => {
     // Preguntar al usuario si desea archivar esta inspección antes de imprimir
     const stats = getInventoryStats();
-    
     let confirmMsg = '¿Deseas archivar este acta en el historial del dispositivo antes de imprimir?';
     if (stats.pending > 0) {
       confirmMsg += `\n\nATENCIÓN: Tienes ${stats.pending} artículos pendientes de revisión.`;
@@ -1219,17 +1027,13 @@ document.addEventListener('DOMContentLoaded', () => {
           pending: stats.pending
         },
         answers: JSON.parse(JSON.stringify(currentState.answers)),
-        metadata: JSON.parse(JSON.stringify(currentState.metadata)),
-        signature: currentState.signatureData,
-        signatureJefe: currentState.signatureDataJefe
+        metadata: JSON.parse(JSON.stringify(currentState.metadata))
       };
 
       currentState.pastInspections.push(archiveItem);
       localStorage.setItem('svb_past_inspections', JSON.stringify(currentState.pastInspections));
-      
       saveStateToLocalStorage();
       renderPastInspectionsList();
-      
       // Lanzar impresión de esta inspección que acabamos de archivar
       triggerArchivedPrintReport(archiveItem);
     }
@@ -1244,7 +1048,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2. Crear el contenedor formal del reporte
     const reportContainer = document.createElement('div');
     reportContainer.id = 'printReportContainer';
-    
     // Aplicar estilos en línea especiales para impresión que aseguren legibilidad en blanco y negro
     reportContainer.style.position = 'absolute';
     reportContainer.style.left = '0';
@@ -1322,7 +1125,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const ans = insData.answers[item.id];
         const isNo = ans && ans.status === 'NO';
         const hasObs = ans && ans.obs && ans.obs.trim() !== '';
-        
         if (isNo || hasObs) {
           noComplianceList.push({
             ...item,
@@ -1385,7 +1187,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // 5. RENDERIZADO DEL CHECKLIST COMPLETO LLENO EXACTAMENTE COMO EL EXCEL
     htmlContent += `
       <h3 style="font-size: 1rem; text-transform: uppercase; border-bottom: 2px solid #000000; margin: 20px 0 10px 0; padding-bottom: 4px; text-align: center;">INVENTARIO COMPLETO Y CONTROL DE DOTACIÓN (CHECKLIST MENSUAL)</h3>
-      
       <table style="width: 100%; border-collapse: collapse; font-size: 7.2pt; line-height: 1.2;">
         <thead>
           <tr style="background-color: #f1f5f9; text-align: left; font-weight: bold; border-bottom: 2px solid #000000;">
@@ -1415,7 +1216,6 @@ document.addEventListener('DOMContentLoaded', () => {
       // Iterar por cada ítem de esta sección
       section.items.forEach(item => {
         const ans = insData.answers[item.id] || { status: '', real_qty: '', expiry: '', obs: '' };
-        
         let cumpleTexto = 'PENDIENTE';
         let cumpleEstilo = 'color: #64748b; font-weight: 500;';
         let filaEstilo = '';
@@ -1464,13 +1264,13 @@ document.addEventListener('DOMContentLoaded', () => {
             <td style="width: 25%; text-align: center; vertical-align: top; padding: 0 8px;">
               <span style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; color: #1e293b;">Inspector Técnico</span>
               <div style="border: 1px solid #000000; border-radius: 4px; width: 100%; height: 100px; margin-top: 6px; display: flex; align-items: center; justify-content: center; background-color: #ffffff;">
-                ${insData.signature ? `<img src="${insData.signature}" style="max-width: 100%; max-height: 100%; display: block;" alt="Firma Inspector">` : `<span style="color: #64748b; font-size: 0.7rem; font-style: italic;">Sin firma</span>`}
+                <span style="color: #64748b; font-size: 0.7rem; font-style: italic;">Fdo: Inspector</span>
               </div>
             </td>
             <td style="width: 25%; text-align: center; vertical-align: top; padding: 0 8px;">
               <span style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; color: #1e293b;">Jefe de Unidad</span>
               <div style="border: 1px solid #000000; border-radius: 4px; width: 100%; height: 100px; margin-top: 6px; display: flex; align-items: center; justify-content: center; background-color: #ffffff;">
-                ${insData.signatureJefe ? `<img src="${insData.signatureJefe}" style="max-width: 100%; max-height: 100%; display: block;" alt="Firma Jefe">` : `<span style="color: #64748b; font-size: 0.7rem; font-style: italic;">Sin firma</span>`}
+                <span style="color: #64748b; font-size: 0.7rem; font-style: italic;">Fdo: Jefe Unidad</span>
               </div>
             </td>
           </tr>
@@ -1525,7 +1325,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // 9. Ejecutar la llamada nativa de impresión con retraso para que cargue la firma
     setTimeout(() => {
       window.print();
-      
       // 10. Limpiar después de imprimir para no corromper la pantalla
       setTimeout(() => {
         reportContainer.remove();
@@ -1697,11 +1496,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- REINICIAR FORMULARIO (LIMPIAR TODO CON CONFIRMACIÓN) ---
   btnResetAll.addEventListener('click', () => {
-    if (confirm('ATENCIÓN: ¿Estás completamente seguro de que deseas reiniciar todo el checklist? Perderás todas las respuestas y la firma guardadas del acta actual.\n\n(Las inspecciones guardadas en el historial del dispositivo no se verán afectadas)')) {
+    if (confirm('ATENCIÓN: ¿Estás completamente seguro de que deseas reiniciar todo el checklist? Perderás todas las respuestas guardadas del acta actual.\n\n(Las inspecciones guardadas en el historial del dispositivo no se verán afectadas)')) {
       currentState.answers = {};
-      currentState.signatureData = '';
-      currentState.signatureDataJefe = '';
-      
       // Reiniciar metadatos excepto fijos si es útil, pero para reiniciar completamente vaciamos todo excepto la matrícula
       const mat = currentState.metadata.matricula;
       currentState.metadata = {
@@ -1714,12 +1510,10 @@ document.addEventListener('DOMContentLoaded', () => {
         fecha_matriculacion: '',
         modelo: ''
       };
-      
       currentState.activeSectionIndex = 0;
       saveStateToLocalStorage();
 
       // Limpiar canvas
-      ctx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
 
       // Recargar interfaz
       alert('Checklist reiniciado con éxito.');

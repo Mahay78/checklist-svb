@@ -267,42 +267,20 @@
         </button>
       </div>
       
-      <!-- Finalization & Signature Section -->
-      <section class="section-card glass-panel" id="signatureSection">
+      <!-- Finalization & Actions Section -->
+      <section class="section-card glass-panel" id="actionsSection">
         <div class="section-header-compact">
           <div class="section-title-icon">
             <svg viewBox="0 0 24 24" class="title-svg" fill="none" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0a2.25 2.25 0 01-2.24 2.24H8.58A2.25 2.25 0 016.34 18m11.318-3.09c.48-.061.95-.126 1.41-.196m-1.41.196l.666 5.33a2.25 2.25 0 002.227 1.97h.046a2.25 2.25 0 002.227-1.97l.666-5.33a2.247 2.247 0 00-1.41-.197m-1.41.197h1.41" />
             </svg>
-            <h3>Finalización y Firma del Operador</h3>
+            <h3>Exportación y Acciones</h3>
           </div>
         </div>
         
-        <div class="signature-container">
-          <div class="signature-box-wrapper">
-            <label>Firma Digitalizada del Inspector</label>
-            <div class="canvas-wrapper">
-              <canvas id="signatureCanvas" width="500" height="200"></canvas>
-            </div>
-            <div class="canvas-controls">
-              <button class="action-btn secondary-btn" id="btnClearSignature">Limpiar Firma</button>
-            </div>
-          </div>
-          <div class="signature-box-wrapper">
-            <label>Firma Digitalizada del Jefe de Unidad</label>
-            <div class="canvas-wrapper">
-              <canvas id="signatureCanvasJefe" width="500" height="200"></canvas>
-            </div>
-            <div class="canvas-controls">
-              <button class="action-btn secondary-btn" id="btnClearSignatureJefe">Limpiar Firma</button>
-            </div>
-          </div>
-        </div>
-          
-          <div class="report-finalize-actions">
-            <h4>Acciones del Documento</h4>
-            <p>Una vez completada la inspección, puedes descargar el informe o exportar los datos para copias de seguridad.</p>
-            <div class="action-buttons-stack">
+        <div class="report-finalize-actions">
+          <p>Una vez completada la inspección, puedes descargar el informe o exportar los datos para copias de seguridad.</p>
+          <div class="action-buttons-stack">
               <button class="action-btn primary-btn flex-btn" id="btnExportPDF">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0a2.25 2.25 0 01-2.24 2.24H8.58A2.25 2.25 0 016.34 18m11.318-3.09c.48-.061.95-.126 1.41-.196m-1.41.196l.666 5.33a2.25 2.25 0 002.227 1.97h.046a2.25 2.25 0 002.227-1.97l.666-5.33a2.247 2.247 0 00-1.41-.197m-1.41.197h1.41" />
@@ -337,9 +315,7 @@
               <button class="action-btn danger-btn flex-btn" id="btnResetAll">
                 <span>Reiniciar Checklist</span>
               </button>
-            </div>
           </div>
-        </div>
       </section>
       
       <!-- Past Inspections Log -->
