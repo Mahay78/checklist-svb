@@ -488,8 +488,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     }
-      });
-    }
 
     if (itemsToRender.length === 0) {
       const emptyRow = document.createElement('tr');
@@ -513,7 +511,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const isOrderMode = activeFilter === 'order';
       const cellCheck = document.createElement('td');
       cellCheck.className = 'col-check';
-      cellCheck.style.cssText = 'text-align:center;';
+      cellCheck.style.cssText = `text-align:center;${isOrderMode ? '' : 'display:none;'}`;
       const chkBox = document.createElement('input');
       chkBox.type = 'checkbox';
       chkBox.style.cssText = 'width:18px;height:18px;cursor:pointer;';
